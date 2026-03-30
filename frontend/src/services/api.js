@@ -40,10 +40,15 @@ async function request(endpoint, options = {}, _isRetry = false) {
     if (!isRefreshing) {
       isRefreshing = true;
       try {
-        await fetch(`${API_BASE}/api/v1/auth/refresh-token`, {
+        const refreshRes = await fetch(`${API_BASE}/api/v1/auth/refresh-token`, {
           method: 'POST',
           credentials: 'include',
         });
+        if (!refreshRes.ok) {
+          const refreshError = new Error('Session expired. Please sign in again.');
+          refreshError.status = refreshRes.status;
+          throw refreshError;
+        }
         processQueue(null);
       } catch (refreshErr) {
         processQueue(refreshErr);
@@ -149,6 +154,42 @@ export const authAPI = {
   adminGetRoles: () =>
     request('/api/v1/auth/admin/roles'),
 
+  adminGetAcademicOptions: () =>
+    request('/api/v1/auth/admin/academic/options'),
+
+  adminCreateSpecialite: (payload) =>
+    request('/api/v1/auth/admin/academic/specialites', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  adminCreatePromo: (payload) =>
+    request('/api/v1/auth/admin/academic/promos', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  adminCreateModule: (payload) =>
+    request('/api/v1/auth/admin/academic/modules', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  adminGetAcademicAssignments: () =>
+    request('/api/v1/auth/admin/academic/assignments'),
+
+  adminAssignStudentPromo: (userId, promoId) =>
+    request(`/api/v1/auth/admin/academic/assignments/students/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ promoId }),
+    }),
+
+  adminAssignTeacherModules: (userId, payload) =>
+    request(`/api/v1/auth/admin/academic/assignments/teachers/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
   adminUpdateUserRoles: (userId, roleNames) =>
     request(`/api/v1/auth/admin/users/${userId}/roles`, {
       method: 'PUT',
@@ -159,6 +200,20 @@ export const authAPI = {
     request(`/api/v1/auth/admin/users/${userId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
+    }),
+};
+
+export const messagesAPI = {
+  getInbox: () =>
+    request('/api/v1/messages/inbox'),
+
+  getCapabilities: () =>
+    request('/api/v1/messages/capabilities'),
+
+  send: ({ mode, recipientUserId, title, content }) =>
+    request('/api/v1/messages/send', {
+      method: 'POST',
+      body: JSON.stringify({ mode, recipientUserId, title, content }),
     }),
 };
 

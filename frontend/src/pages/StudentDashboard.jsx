@@ -94,7 +94,7 @@ function formatDeadline(dateStr, t) {
 }
 
 /* ── Component ──────────────────────────────────────────────── */
-export default function StudentDashboard() {
+export default function StudentDashboard({ role = 'student' }) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -102,8 +102,14 @@ export default function StudentDashboard() {
   const [deadlines, setDeadlines] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const canUseStudentApis = role === 'student';
 
   useEffect(() => {
+    if (!canUseStudentApis) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     async function load() {
       try {
@@ -124,11 +130,20 @@ export default function StudentDashboard() {
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [canUseStudentApis]);
+
+  if (!canUseStudentApis) {
+    return (
+      <div className="bg-surface rounded-lg border border-edge shadow-card p-6">
+        <h2 className="text-base font-semibold text-ink">Student workspace only</h2>
+        <p className="mt-1 text-sm text-ink-tertiary">This dashboard is available for student and delegate accounts.</p>
+      </div>
+    );
+  }
 
   const displayName = user?.prenom || 'Student';
-  const dept = user?.student?.department?.name || '';
-  const spec = user?.student?.specialite?.name || '';
+  const dept = user?.etudiant?.promo?.specialite?.filiere?.departement?.nom || '';
+  const spec = user?.etudiant?.promo?.specialite?.nom || '';
   const subtitle = [spec, dept].filter(Boolean).join(' · ') || t('studentDashboard.welcomeDefault');
 
   const avgProgress = specialties.length
@@ -206,7 +221,24 @@ export default function StudentDashboard() {
           ))}
         </div>
       )}
-
+      {!loading && (
+        <div className="bg-surface rounded-lg border border-edge shadow-card p-4">
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={() => navigate('/dashboard/notes')} className="rounded-md border border-edge bg-canvas px-3 py-2 text-sm font-medium text-ink hover:border-brand/40">
+              View Notes
+            </button>
+            <button type="button" onClick={() => navigate('/dashboard/specialite-choice')} className="rounded-md border border-edge bg-canvas px-3 py-2 text-sm font-medium text-ink hover:border-brand/40">
+              Choose Specialite
+            </button>
+            <button type="button" onClick={() => navigate('/dashboard/requests')} className="rounded-md border border-edge bg-canvas px-3 py-2 text-sm font-medium text-ink hover:border-brand/40">
+              Reclamations & Justifications
+            </button>
+            <button type="button" onClick={() => navigate('/dashboard/profile')} className="rounded-md border border-edge bg-canvas px-3 py-2 text-sm font-medium text-ink hover:border-brand/40">
+              My Profile
+            </button>
+          </div>
+        </div>
+      )}
       {/* ── My Modules Table ───────────────────────────────── */}
       {!loading && specialties.length > 0 && (
         <div className="bg-surface rounded-lg border border-edge shadow-card">

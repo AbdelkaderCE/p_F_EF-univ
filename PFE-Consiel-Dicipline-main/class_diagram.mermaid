@@ -1,0 +1,211 @@
+classDiagram
+
+  %% ── Enumerations ──────────────────────────────────────────────────────────
+
+  class StudentStatus {
+    <<enumeration>>
+    UNDER_REVIEW
+    WARNING
+    CLOSED
+    HEAVY_SANCTION
+  }
+
+  class MeetingStatus {
+    <<enumeration>>
+    SCHEDULED
+    FINALIZED
+  }
+
+  class MeetingMode {
+    <<enumeration>>
+    IN_PERSON
+    VIDEO
+    HYBRID
+  }
+
+  class DecisionType {
+    <<enumeration>>
+    AVERTISSEMENT_ORAL
+    AVERTISSEMENT_ECRIT
+    BLAME
+    EXCLUSION_TEMPORAIRE
+    EXCLUSION_DEFINITIVE
+    CLASSE_SANS_SUITE
+  }
+
+  %% ── Core Entities ─────────────────────────────────────────────────────────
+
+  class Student {
+    +String id
+    +String name
+    +String field
+    +String level
+    +StudentStatus status
+    +int infractions
+    +Date lastReport
+    +updateStatus(StudentStatus) void
+  }
+
+  class CouncilMember {
+    +String id
+    +String name
+    +String role
+    +String title
+  }
+
+  class DisciplinaryCouncil {
+    +CouncilMember president
+    +CouncilMember[] members
+    +getComposition() CouncilMember[]
+  }
+
+  class Meeting {
+    +String id
+    +String title
+    +Date date
+    +String time
+    +String location
+    +MeetingMode mode
+    +MeetingStatus status
+    +String agenda
+    +Student[] convocatedStudents
+    +Decision[] decisions
+    +String globalNotes
+    +finalize() void
+    +addDecision(Decision) void
+  }
+
+  class Decision {
+    +String studentId
+    +DecisionType type
+    +String justification
+    +StudentStatus newStatus
+    +Date issuedAt
+  }
+
+  %% ── UI / Screen Layer ─────────────────────────────────────────────────────
+
+  class App {
+    +String activeScreen
+    +Student[] students
+    +Meeting[] meetings
+    +String|null viewMeetingId
+    +String[] newMeetingPreselected
+    +navigateTo(screen) void
+    +handleNewMeeting(ids) void
+    +handleViewMeeting(id) void
+    +handleFinalize(id, decisions, notes) void
+  }
+
+  class Dashboard {
+    +Student[] students
+    +Meeting[] meetings
+    +getStats() Object
+    +getRecentMeetings() Meeting[]
+  }
+
+  class StudentList {
+    +String search
+    +StudentStatus filterStatus
+    +String filterLevel
+    +String[] selected
+    +filter() Student[]
+    +toggleSelect(id) void
+    +toggleAll() void
+  }
+
+  class NewMeeting {
+    +Student[] selectedStudents
+    +MeetingForm form
+    +DisciplinaryCouncil council
+    +Boolean saved
+    +addStudent(id) void
+    +removeStudent(id) void
+    +handleSave() void
+  }
+
+  class MeetingForm {
+    +String title
+    +String date
+    +String time
+    +String location
+    +MeetingMode mode
+    +String agenda
+  }
+
+  class MeetingDetail {
+    +Meeting meeting
+    +Map~String·DecisionDraft~ decisions
+    +String globalNotes
+    +Boolean finalized
+    +handleFinalize() void
+  }
+
+  class DecisionDraft {
+    +String studentId
+    +String decision
+    +String justification
+    +StudentStatus newStatus
+  }
+
+  class Archives {
+    +MeetingStatus filterStatus
+    +String search
+    +filter() Meeting[]
+  }
+
+  %% ── Shared UI Components ──────────────────────────────────────────────────
+
+  class Badge {
+    +StudentStatus status
+    +render() JSX
+  }
+
+  class MeetingBadge {
+    +MeetingStatus status
+    +render() JSX
+  }
+
+  class Avatar {
+    +String name
+    +int size
+    +render() JSX
+  }
+
+  %% ── Relationships ─────────────────────────────────────────────────────────
+
+  App "1" --> "0..*" Meeting        : manages
+  App "1" --> "0..*" Student        : manages
+  App "1" --> "1"    Dashboard      : renders
+  App "1" --> "1"    StudentList    : renders
+  App "1" --> "1"    NewMeeting     : renders
+  App "1" --> "1"    MeetingDetail  : renders
+  App "1" --> "1"    Archives       : renders
+
+  Meeting "1" --> "0..*" Decision         : contains
+  Meeting "1" --> "0..*" Student          : convocates
+  Meeting "1" --> "1"    DisciplinaryCouncil : heldBy
+
+  Decision "1" --> "1" Student       : concerns
+  Decision "1" --> "1" DecisionType  : typedAs
+
+  DisciplinaryCouncil "1" --> "1"    CouncilMember  : presidedBy
+  DisciplinaryCouncil "1" --> "0..*" CouncilMember  : composedOf
+
+  NewMeeting "1" --> "1"    MeetingForm          : uses
+  NewMeeting "1" --> "1"    DisciplinaryCouncil  : displays
+  NewMeeting "1" --> "0..*" Student              : selects
+
+  MeetingDetail "1" --> "1"    Meeting        : displays
+  MeetingDetail "1" --> "0..*" DecisionDraft  : drafts
+
+  StudentList  ..> Badge         : uses
+  Archives     ..> MeetingBadge  : uses
+  Dashboard    ..> MeetingBadge  : uses
+  MeetingDetail ..> Badge        : uses
+  MeetingDetail ..> Avatar       : uses
+  NewMeeting    ..> Avatar       : uses
+
+  Student  --> StudentStatus : hasStatus
+  Meeting  --> MeetingStatus : hasStatus
+  Meeting  --> MeetingMode   : hasMode

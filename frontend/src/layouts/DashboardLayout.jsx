@@ -33,16 +33,55 @@ const ALL_MODULES = [
   { nameKey: 'nav.settings',      path: '/dashboard/settings',       roles: ['etudiant', 'delegue', 'enseignant', 'chef_specialite', 'chef_departement', 'vice_doyen', 'admin'] },
   { nameKey: 'nav.support',       path: '/dashboard/support',        roles: ['etudiant', 'delegue', 'enseignant'] },
   { nameKey: 'nav.userManagement', path: '/dashboard/admin/users',   roles: ['vice_doyen', 'admin'] },
+  { nameKey: 'nav.academicStructure', path: '/dashboard/admin/academic/management', roles: ['vice_doyen', 'admin'] },
+  { nameKey: 'nav.academicAssignments', path: '/dashboard/admin/academic/assignments', roles: ['vice_doyen', 'admin'] },
 ];
 
 /* Map DB roles to the UI role token used by children (student | teacher | admin) */
 function uiRole(roles) {
   if (!roles || !roles.length) return 'student';
   const arr = Array.isArray(roles) ? roles : [roles];
-  const upper = arr.map(r => (r || '').toUpperCase());
-  if (upper.some(r => ['ADMIN', 'ADMIN_FACULTY', 'ADMIN_SUPER', 'VICE_DOYEN'].includes(r))) return 'admin';
-  if (upper.some(r => ['TEACHER', 'ENSEIGNANT', 'SPECIALITE_CHEF', 'CHEF_SPECIALITE', 'DEPARTEMENT_CHEF', 'CHEF_DEPARTEMENT'].includes(r))) return 'teacher';
+  const upper = arr.map((r) => (r || '').toUpperCase());
+  if (upper.some((r) => ['ADMIN', 'ADMIN_FACULTY', 'ADMIN_FACULTE', 'ADMIN_SUPER', 'VICE_DOYEN'].includes(r))) return 'admin';
+  if (upper.some((r) => ['TEACHER', 'ENSEIGNANT'].includes(r))) return 'teacher';
   return 'student'; // etudiant, delegue, etc.
+}
+
+function dashboardHomeByRoles(roles) {
+  if (!roles || !roles.length) return 'student';
+  const arr = Array.isArray(roles) ? roles : [roles];
+  const normalized = arr.map((r) => String(r || '').toLowerCase());
+
+  if (normalized.some((r) => ['etudiant', 'delegue', 'student'].includes(r))) return 'student';
+  if (normalized.some((r) => ['enseignant', 'teacher'].includes(r))) return 'teacher';
+  return 'admin';
+}
+
+function AdminHomePanel({ onNavigate }) {
+  return (
+    <div className="rounded-2xl border border-edge bg-surface p-8 shadow-card">
+      <h1 className="text-2xl font-bold tracking-tight text-ink">Admin Dashboard</h1>
+      <p className="mt-2 text-sm text-ink-secondary">
+        Welcome. Select a module to continue administration tasks.
+      </p>
+      <div className="mt-5 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => onNavigate('/dashboard/admin/users')}
+          className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover"
+        >
+          Manage Users
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate('/dashboard/requests')}
+          className="rounded-xl border border-edge bg-canvas px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/30 hover:text-brand"
+        >
+          Open Requests
+        </button>
+      </div>
+    </div>
+  );
 }
 
 const DashboardLayout = ({ children }) => {
@@ -57,6 +96,7 @@ const DashboardLayout = ({ children }) => {
   const activeKey = location.pathname;
 
   const role = uiRole(user?.roles);
+  const defaultHome = dashboardHomeByRoles(user?.roles);
 
   /* Filter modules by the user's actual DB roles and resolve translated names */
   const visibleModules = ALL_MODULES
@@ -107,7 +147,11 @@ const DashboardLayout = ({ children }) => {
             ? React.Children.map(children, (child) =>
                 React.isValidElement(child) ? React.cloneElement(child, { role }) : child
               )
-            : (role === 'teacher' ? <TeacherDashboard /> : <StudentDashboard />)
+            : (defaultHome === 'student'
+                ? <StudentDashboard role={role} />
+                : defaultHome === 'teacher'
+                  ? <TeacherDashboard role={role} />
+                  : <AdminHomePanel onNavigate={handleNavigate} />)
           }
         </main>
       </div>

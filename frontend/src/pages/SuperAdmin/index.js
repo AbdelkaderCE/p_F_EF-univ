@@ -1,4 +1,5 @@
 export { default as SuperAdminDashboardPage } from './Dashboard';
+export { default as SuperAdminGroupsPage } from './Groups';
 export { default as SuperAdminUsersPage } from './Users';
 export { default as SuperAdminRolesPage } from './Roles';
 export { default as SuperAdminSettingsPage } from './Settings';

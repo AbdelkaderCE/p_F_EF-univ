@@ -17,7 +17,9 @@
     "settings": "Settings",
     "support": "Support",
     "profile": "Profile",
-    "userManagement": "User Management"
+    "userManagement": "User Management",
+    "academicStructure": "Academic Structure",
+    "academicAssignments": "Academic Assignments"
   },
   "sections": {
     "academic": "Academic",

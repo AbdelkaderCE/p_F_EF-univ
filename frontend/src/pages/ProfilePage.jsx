@@ -54,8 +54,8 @@ export default function ProfilePage() {
   const rolePretty = (user.roles?.[0] || 'etudiant').replace(/_/g, ' ');
 
   /* Student sub-record (populated by /auth/me → getUserById) */
-  const dept = user.student?.department?.name || '—';
-  const spec = user.student?.specialite?.name || '—';
+  const dept = user.etudiant?.promo?.specialite?.filiere?.departement?.nom || '—';
+  const spec = user.etudiant?.promo?.specialite?.nom || '—';
 
   return (
     <div className="space-y-6 max-w-3xl min-w-0">

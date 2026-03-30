@@ -1,23 +1,82 @@
-﻿import React from 'react';
-import ModulePlaceholderPage from '../../components/common/ModulePlaceholderPage';
+﻿import React, { useState } from 'react';
+import UserRegistrationForm from '../../components/admin/UserRegistrationForm';
+import StaffManagementTable from '../../components/admin/StaffManagementTable';
+import { Users, Plus, Settings } from 'lucide-react';
 
-const Users = () => (
-  <ModulePlaceholderPage
-    eyebrow="Super Admin Workspace"
-    title="Super Admin Users"
-    description="The Super Admin Users module now has a polished dashboard layout and is ready for the next implementation step. Connect the backend workflow and operational actions when this feature's business rules are finalized."
-    stats={[
-      { label: 'Status', value: 'UI Ready' },
-      { label: 'Access', value: 'Role Scoped' },
-      { label: 'Data', value: 'Pending API' },
-    ]}
-    checklist={[
-      'Connect the backend endpoint for this module.',
-      'Add real filters, tables, or workflow actions.',
-      'Translate labels and validation messages for all supported languages.',
-    ]}
-    accent="warning"
-  />
-);
+const Users = () => {
+  const [activeTab, setActiveTab] = useState('register');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleUserCreated = () => {
+    // Trigger refresh of user list
+    setRefreshKey(prev => prev + 1);
+    setActiveTab('manage');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3 mb-2">
+            <Users className="w-10 h-10 text-blue-600" />
+            User Management
+          </h1>
+          <p className="text-gray-600">
+            Register new users, manage roles, and maintain strict role separation between teachers and students.
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('register')}
+            className={`px-6 py-3 font-semibold flex items-center gap-2 border-b-2 transition ${
+              activeTab === 'register'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Plus className="w-5 h-5" />
+            Register User
+          </button>
+          <button
+            onClick={() => setActiveTab('manage')}
+            className={`px-6 py-3 font-semibold flex items-center gap-2 border-b-2 transition ${
+              activeTab === 'manage'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            Manage Users
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="mb-8">
+          {activeTab === 'register' && (
+            <UserRegistrationForm onSuccess={handleUserCreated} />
+          )}
+
+          {activeTab === 'manage' && (
+            <StaffManagementTable refreshKey={refreshKey} />
+          )}
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-7xl mx-auto">
+          <h3 className="font-bold text-blue-900 mb-3">💡 Role Management Best Practices</h3>
+          <ul className="space-y-2 text-blue-800 text-sm">
+            <li>📌 Teacher roles (Enseignant, Admin, Vice Doyen) cannot be mixed with student roles</li>
+            <li>👥 Each user is either a teacher or a student, maintaining clear institutional hierarchy</li>
+            <li>🔐 Role assignment is strictly validated during user creation and updates</li>
+            <li>✓ New users are assigned a temporary password and must change it on first login</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default Users;

@@ -29,6 +29,8 @@ const PAGE_TITLE_KEYS = {
   '/dashboard/support':        'nav.support',
   '/dashboard/profile':        'nav.profile',
   '/dashboard/admin/users':    'nav.userManagement',
+  '/dashboard/admin/academic/management': 'nav.academicStructure',
+  '/dashboard/admin/academic/assignments': 'nav.academicAssignments',
 };
 
 export default function Topbar({ role = 'student', user, onLogout, onHamburger, onNavigate, activeKey = '/dashboard', sidebarCollapsed = false, onToggleSidebar }) {

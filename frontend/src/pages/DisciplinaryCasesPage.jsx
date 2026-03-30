@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import CaseDetailPage from './CaseDetailPage';
 import StudentDisciplinaryView from './StudentDisciplinaryView';
 import request from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 /* ── Inline SVG Icons (stroke 1.5) ─────────────────────────── */
 
@@ -135,6 +136,94 @@ function daysSince(dateStr) {
   return Math.floor((new Date().getTime() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function normalizeCase(rawCase) {
+  if (!rawCase) return null;
+
+  const statusMap = {
+    signale: 'pending',
+    en_instruction: 'hearing',
+    jugement: 'hearing',
+    traite: 'closed',
+  };
+
+  const etudiant = rawCase.etudiant || {};
+  const user = etudiant.user || {};
+  const caseId = rawCase.id;
+  const normalizedId = typeof caseId === 'string' && caseId.startsWith('CASE-')
+    ? caseId
+    : `CASE-${caseId}`;
+  const dateSignal = rawCase.dateSignal || rawCase.dateReported || rawCase.createdAt || new Date().toISOString();
+  const description = rawCase.descriptionSignal || rawCase.description || '';
+  const infractionName = rawCase.infraction?.nom || rawCase.violationType || 'Misconduct';
+
+  return {
+    ...rawCase,
+    rawId: typeof caseId === 'number' ? caseId : undefined,
+    id: normalizedId,
+    status: statusMap[rawCase.status] || rawCase.status || 'pending',
+    studentName: rawCase.studentName || [user.prenom, user.nom].filter(Boolean).join(' ').trim() || 'Unknown student',
+    studentId: rawCase.studentId || etudiant.matricule || '-',
+    department: rawCase.department || '-',
+    violationType: infractionName,
+    description,
+    dateReported: dateSignal,
+    dateOfIncident: rawCase.dateOfIncident || dateSignal,
+    timeline: Array.isArray(rawCase.timeline) && rawCase.timeline.length > 0
+      ? rawCase.timeline
+      : [
+          {
+            event: 'Report Submitted',
+            date: dateSignal,
+            detail: description || `Case reported for ${infractionName}.`,
+            by: rawCase.enseignantSignalantR
+              ? [rawCase.enseignantSignalantR.user?.prenom, rawCase.enseignantSignalantR.user?.nom].filter(Boolean).join(' ')
+              : 'Teacher',
+          },
+        ],
+    evidenceFiles: Array.isArray(rawCase.evidenceFiles) ? rawCase.evidenceFiles : [],
+    decision: rawCase.decision
+      ? {
+          verdict: rawCase.decision.nom,
+          details: rawCase.remarqueDecision || rawCase.decision.description || '',
+          date: rawCase.dateDecision || rawCase.updatedAt || rawCase.createdAt || new Date().toISOString(),
+          issuedBy: 'Disciplinary council',
+        }
+      : rawCase.decision || null,
+  };
+}
+
+function normalizeMeeting(rawMeeting) {
+  if (!rawMeeting) return null;
+
+  const meetingId = rawMeeting.id;
+  const normalizedId = typeof meetingId === 'string' && meetingId.startsWith('MEET-')
+    ? meetingId
+    : `MEET-${meetingId}`;
+
+  const participants = Array.isArray(rawMeeting.participants)
+    ? rawMeeting.participants
+    : Array.isArray(rawMeeting.membres)
+      ? rawMeeting.membres.map((m) => [m.enseignant?.user?.prenom, m.enseignant?.user?.nom].filter(Boolean).join(' ').trim()).filter(Boolean)
+      : [];
+
+  const caseIds = Array.isArray(rawMeeting.caseIds)
+    ? rawMeeting.caseIds
+    : Array.isArray(rawMeeting.dossiers)
+      ? rawMeeting.dossiers.map((d) => `CASE-${d.id}`)
+      : [];
+
+  return {
+    ...rawMeeting,
+    id: normalizedId,
+    date: rawMeeting.date || rawMeeting.dateReunion || new Date().toISOString(),
+    time: rawMeeting.time || (rawMeeting.heure ? new Date(rawMeeting.heure).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'),
+    location: rawMeeting.location || rawMeeting.lieu || 'TBD',
+    status: rawMeeting.status === 'planifie' ? 'scheduled' : rawMeeting.status === 'termine' ? 'finalized' : (rawMeeting.status || 'scheduled'),
+    participants,
+    caseIds,
+  };
+}
+
 /* ── Shared Sub-components ──────────────────────────────────── */
 
 function StatusBadge({ status, config }) {
@@ -177,6 +266,73 @@ function Avatar({ name, size = 'w-8 h-8 text-xs' }) {
   );
 }
 
+function TeacherQuickReport({
+  students,
+  form,
+  onChange,
+  onSubmit,
+  submitting,
+  error,
+  success,
+}) {
+  return (
+    <div className="bg-surface rounded-lg border border-edge shadow-card p-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-base font-semibold text-ink">Teacher Report</h2>
+          <p className="text-sm text-ink-tertiary mt-1">Select one student and write the reason to open a disciplinary case.</p>
+        </div>
+      </div>
+
+      <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="md:col-span-1">
+          <label className="block text-xs font-medium text-ink-secondary mb-1">Student</label>
+          <select
+            value={form.studentId}
+            onChange={(e) => onChange('studentId', e.target.value)}
+            className="w-full px-3 py-2 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand"
+            required
+          >
+            <option value="">Select student...</option>
+            {students.map((s) => (
+              <option key={s.id} value={String(s.id)}>
+                {s.fullName} {s.matricule ? `(${s.matricule})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-3">
+          <label className="block text-xs font-medium text-ink-secondary mb-1">Reason</label>
+          <textarea
+            value={form.reason}
+            onChange={(e) => onChange('reason', e.target.value)}
+            rows={3}
+            maxLength={2000}
+            className="w-full px-3 py-2 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand"
+            placeholder="Describe what happened..."
+            required
+          />
+        </div>
+
+        <div className="md:col-span-4 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            {error && <p className="text-xs text-danger">{error}</p>}
+            {success && <p className="text-xs text-success">{success}</p>}
+          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-4 py-2 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'Submitting...' : 'Create Case'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 /* ── Tab Definitions ────────────────────────────────────────── */
 
 const TABS = [
@@ -190,6 +346,8 @@ const TABS = [
    ═══════════════════════════════════════════════════════════════ */
 
 export default function DisciplinaryCasesPage({ role = 'teacher' }) {
+  const { user } = useAuth();
+
   /* Top-level nav */
   const [activeTab, setActiveTab] = useState('cases');
   const [selectedCase, setSelectedCase] = useState(null);
@@ -208,17 +366,44 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
   /* Data from API */
   const [cases, setCases] = useState([]);
   const [meetings, setMeetings] = useState([]);
+  const [students, setStudents] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState('');
+  const [reportSuccess, setReportSuccess] = useState('');
+  const [reportForm, setReportForm] = useState({ studentId: '', reason: '' });
+
+  const currentRoles = Array.isArray(user?.roles) ? user.roles : [];
+  const canTeacherReport = role === 'teacher' || currentRoles.includes('enseignant');
+
+  const loadCases = async () => {
+    const response = await request('/api/v1/disciplinary/cases');
+    const rawCases = Array.isArray(response?.data) ? response.data : [];
+    setCases(rawCases.map(normalizeCase).filter(Boolean));
+  };
 
   useEffect(() => {
     (async () => {
       try {
-        const [cRes, mRes] = await Promise.allSettled([
-          request.get('/api/v1/disciplinary/cases'),
-          request.get('/api/v1/disciplinary/meetings'),
+        const [cRes, mRes, sRes] = await Promise.allSettled([
+          request('/api/v1/disciplinary/cases'),
+          request('/api/v1/disciplinary/meetings'),
+          request('/api/v1/disciplinary/students'),
         ]);
-        if (cRes.status === 'fulfilled') setCases(cRes.value.data ?? []);
-        if (mRes.status === 'fulfilled') setMeetings(mRes.value.data ?? []);
+
+        if (cRes.status === 'fulfilled') {
+          const rawCases = Array.isArray(cRes.value?.data) ? cRes.value.data : [];
+          setCases(rawCases.map(normalizeCase).filter(Boolean));
+        }
+
+        if (mRes.status === 'fulfilled') {
+          const rawMeetings = Array.isArray(mRes.value?.data) ? mRes.value.data : [];
+          setMeetings(rawMeetings.map(normalizeMeeting).filter(Boolean));
+        }
+
+        if (sRes.status === 'fulfilled') {
+          setStudents(Array.isArray(sRes.value?.data) ? sRes.value.data : []);
+        }
       } catch {
         /* endpoints may not exist yet */
       } finally {
@@ -226,6 +411,47 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
       }
     })();
   }, []);
+
+  const updateReportForm = (field, value) => {
+    setReportForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleTeacherReportSubmit = async (event) => {
+    event.preventDefault();
+    setReportError('');
+    setReportSuccess('');
+
+    const studentId = Number(reportForm.studentId);
+    const reason = reportForm.reason.trim();
+
+    if (!studentId || !reason) {
+      setReportError('Please select a student and enter the reason.');
+      return;
+    }
+
+    try {
+      setReportSubmitting(true);
+      await request('/api/v1/disciplinary/cases', {
+        method: 'POST',
+        body: JSON.stringify({
+          studentId,
+          reason,
+          titre: 'Teacher disciplinary report',
+          typeInfraction: 'Misconduct',
+          gravite: 'majeure',
+        }),
+      });
+
+      await loadCases();
+      setReportForm({ studentId: '', reason: '' });
+      setReportSuccess('Case created successfully.');
+      setActiveTab('cases');
+    } catch (error) {
+      setReportError(error?.message || 'Failed to create case.');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   // Students see their own view
   if (role === 'student') return <StudentDisciplinaryView />;
@@ -321,6 +547,18 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
           New Meeting
         </button>
       </div>
+
+      {canTeacherReport && (
+        <TeacherQuickReport
+          students={students}
+          form={reportForm}
+          onChange={updateReportForm}
+          onSubmit={handleTeacherReportSubmit}
+          submitting={reportSubmitting}
+          error={reportError}
+          success={reportSuccess}
+        />
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

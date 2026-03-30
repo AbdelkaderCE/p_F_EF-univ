@@ -85,7 +85,9 @@ function Section({ title, icon, children }) {
    ════════════════════════════════════════════════════════════════ */
 
 export default function RequestDetailPage({ request, onBack }) {
-  const status = STATUS_CONFIG[request.status];
+  const status = STATUS_CONFIG[request?.status] || STATUS_CONFIG.draft;
+  const timeline = Array.isArray(request?.timeline) ? request.timeline : [];
+  const attachments = Array.isArray(request?.attachments) ? request.attachments : [];
 
   return (
     <div className="space-y-6">
@@ -228,7 +230,7 @@ export default function RequestDetailPage({ request, onBack }) {
               <div className="relative">
                 <div className="absolute left-4 top-2 bottom-2 w-px bg-edge" />
                 <ul className="space-y-5">
-                  {request.timeline.map((step, i) => {
+                  {timeline.map((step, i) => {
                     const iconCfg = TIMELINE_ICONS[step.event] || DEFAULT_ICON;
                     return (
                       <li key={i} className="relative flex gap-3">
@@ -248,7 +250,7 @@ export default function RequestDetailPage({ request, onBack }) {
           </div>
 
           {/* ── Attachments ────────────────────────────────────── */}
-          {request.attachments.length > 0 && (
+          {attachments.length > 0 && (
             <div className="bg-surface rounded-lg border border-edge shadow-card">
               <div className="px-6 py-4 border-b border-edge-subtle flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -258,11 +260,11 @@ export default function RequestDetailPage({ request, onBack }) {
                   <h3 className="text-sm font-semibold text-ink">Attachments</h3>
                 </div>
                 <span className="text-[11px] font-medium text-ink-muted bg-surface-200 px-2 py-0.5 rounded">
-                  {request.attachments.length} file{request.attachments.length !== 1 ? 's' : ''}
+                  {attachments.length} file{attachments.length !== 1 ? 's' : ''}
                 </span>
               </div>
               <ul className="divide-y divide-edge-subtle">
-                {request.attachments.map((file) => (
+                {attachments.map((file) => (
                   <li key={file.name} className="px-6 py-3 flex items-center gap-3 hover:bg-surface-200/50 transition-colors duration-100">
                     <div className="w-8 h-8 rounded-lg bg-surface-200 flex items-center justify-center text-ink-tertiary shrink-0">
                       <FileIcon type={file.type} />

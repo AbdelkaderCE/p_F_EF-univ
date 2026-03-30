@@ -75,6 +75,18 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
     </svg>
   ),
+  '/dashboard/admin/academic/management': (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5A2.25 2.25 0 015.25 5.25h13.5A2.25 2.25 0 0121 7.5v9A2.25 2.25 0 0118.75 18.75H5.25A2.25 2.25 0 013 16.5v-9z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 9.75h9m-9 3h6" />
+    </svg>
+  ),
+  '/dashboard/admin/academic/assignments': (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5V6a3 3 0 10-6 0v1.5m6 0h1.5A1.5 1.5 0 0121 9v9.75a1.5 1.5 0 01-1.5 1.5H4.5A1.5 1.5 0 013 18.75V9a1.5 1.5 0 011.5-1.5H6m12 0H6" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13.5l1.5 1.5 4.5-4.5" />
+    </svg>
+  ),
 };
 
 /* ── Section labels for grouping (i18n keys) ─────────────────── */
@@ -91,6 +103,8 @@ const SECTIONS = {
   '/dashboard/notifications':  null,
   '/dashboard/settings':       'sections.system',
   '/dashboard/support':        null,
+  '/dashboard/admin/academic/management': 'sections.system',
+  '/dashboard/admin/academic/assignments': 'sections.system',
 };
 
 export default function Sidebar({ modules = [], open = false, onClose, onNavigate, activeKey, collapsed = false, onToggleCollapse }) {

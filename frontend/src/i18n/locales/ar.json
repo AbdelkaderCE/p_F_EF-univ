@@ -17,7 +17,9 @@
     "settings": "الإعدادات",
     "support": "المساعدة",
     "profile": "الملف الشخصي",
-    "userManagement": "إدارة المستخدمين"
+    "userManagement": "إدارة المستخدمين",
+    "academicStructure": "الهيكلة الأكاديمية",
+    "academicAssignments": "الإسنادات الأكاديمية"
   },
   "sections": {
     "academic": "أكاديمي",

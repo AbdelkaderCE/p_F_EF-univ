@@ -12,17 +12,24 @@ import {
   adminResetPasswordHandler,
   listAdminUsersHandler,
   listRolesHandler,
+  getAcademicManagementOptionsHandler,
+  createSpecialiteManagementHandler,
+  createPromoManagementHandler,
+  createModuleManagementHandler,
+  getAcademicAssignmentsHandler,
+  assignStudentPromoHandler,
+  assignTeacherModulesHandler,
   updateUserRolesByAdminHandler,
   updateUserStatusByAdminHandler,
   forgotPasswordHandler,
   resetPasswordHandler,
-} from "../controllers/auth.controller";
+} from "../../../controllers/auth/auth.controller";
 import {
   loginLimiter,
   registerLimiter,
   refreshLimiter,
-} from "../../../middleware/rate-limit.middleware";
-import { requireAuth, requireRole } from "../../../middleware/auth.middleware";
+} from "../../../middlewares/rate-limit.middleware";
+import { requireAuth, requireRole } from "../../../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -88,6 +95,55 @@ router.put(
   requireAuth,
   requireRole(["admin", "vice_doyen"]),
   updateUserStatusByAdminHandler
+);
+
+router.get(
+  "/admin/academic/options",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  getAcademicManagementOptionsHandler
+);
+
+router.post(
+  "/admin/academic/specialites",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  createSpecialiteManagementHandler
+);
+
+router.post(
+  "/admin/academic/promos",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  createPromoManagementHandler
+);
+
+router.post(
+  "/admin/academic/modules",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  createModuleManagementHandler
+);
+
+router.get(
+  "/admin/academic/assignments",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  getAcademicAssignmentsHandler
+);
+
+router.put(
+  "/admin/academic/assignments/students/:userId",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  assignStudentPromoHandler
+);
+
+router.put(
+  "/admin/academic/assignments/teachers/:userId",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  assignTeacherModulesHandler
 );
 
 export default router;

@@ -83,9 +83,14 @@ function Section({ title, icon, children, action }) {
 export default function CaseDetailPage({ caseData, onBack }) {
   const [showSanctionModal, setShowSanctionModal] = useState(false);
   const [showSummonsModal, setShowSummonsModal] = useState(false);
-  const [hearingDate, setHearingDate] = useState(caseData.hearingDate || '');
+  const safeCaseData = {
+    ...caseData,
+    timeline: Array.isArray(caseData?.timeline) ? caseData.timeline : [],
+    evidence: Array.isArray(caseData?.evidence) ? caseData.evidence : [],
+  };
+  const [hearingDate, setHearingDate] = useState(safeCaseData.hearingDate || '');
 
-  const status = STATUS_CONFIG[caseData.status];
+  const status = STATUS_CONFIG[safeCaseData.status] || STATUS_CONFIG.pending;
 
   return (
     <div className="space-y-6">
@@ -105,20 +110,20 @@ export default function CaseDetailPage({ caseData, onBack }) {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-xl font-bold text-ink tracking-tight">Case {caseData.id}</h1>
+              <h1 className="text-xl font-bold text-ink tracking-tight">Case {safeCaseData.id}</h1>
               <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${status.bg} ${status.text} border ${status.border}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                 {status.label}
               </span>
             </div>
             <p className="text-sm text-ink-tertiary">
-              {caseData.violationType} · Reported {formatDate(caseData.dateReported)}
+              {safeCaseData.violationType} · Reported {formatDate(safeCaseData.dateReported)}
             </p>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {(caseData.status === 'pending' || caseData.status === 'hearing') && (
+            {(safeCaseData.status === 'pending' || safeCaseData.status === 'hearing') && (
               <button
                 onClick={() => setShowSummonsModal(true)}
                 className="px-4 py-2 text-sm font-medium text-ink-secondary bg-surface border border-edge rounded-md hover:bg-surface-200 transition-colors duration-150 flex items-center gap-2"
@@ -129,7 +134,7 @@ export default function CaseDetailPage({ caseData, onBack }) {
                 Schedule Hearing
               </button>
             )}
-            {caseData.status !== 'closed' && (
+            {safeCaseData.status !== 'closed' && (
               <button
                 onClick={() => setShowSanctionModal(true)}
                 className="px-4 py-2 text-sm font-medium text-white bg-danger rounded-md hover:bg-red-700 active:bg-red-800 transition-all duration-150 flex items-center gap-2"
@@ -156,24 +161,24 @@ export default function CaseDetailPage({ caseData, onBack }) {
             icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
           >
             <div className="p-6">
-              <p className="text-sm text-ink-secondary leading-relaxed">{caseData.description}</p>
+              <p className="text-sm text-ink-secondary leading-relaxed">{safeCaseData.description}</p>
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-ink-muted">Student</p>
-                  <p className="text-sm font-medium text-ink mt-0.5">{caseData.studentName}</p>
-                  <p className="text-xs text-ink-tertiary">{caseData.studentId}</p>
+                  <p className="text-sm font-medium text-ink mt-0.5">{safeCaseData.studentName}</p>
+                  <p className="text-xs text-ink-tertiary">{safeCaseData.studentId}</p>
                 </div>
                 <div>
                   <p className="text-xs text-ink-muted">Department</p>
-                  <p className="text-sm font-medium text-ink mt-0.5">{caseData.department}</p>
+                  <p className="text-sm font-medium text-ink mt-0.5">{safeCaseData.department}</p>
                 </div>
                 <div>
                   <p className="text-xs text-ink-muted">Violation</p>
-                  <p className="text-sm font-medium text-ink mt-0.5">{caseData.violationType}</p>
+                  <p className="text-sm font-medium text-ink mt-0.5">{safeCaseData.violationType}</p>
                 </div>
                 <div>
                   <p className="text-xs text-ink-muted">Incident Date</p>
-                  <p className="text-sm font-medium text-ink mt-0.5">{formatDateShort(caseData.dateOfIncident)}</p>
+                  <p className="text-sm font-medium text-ink mt-0.5">{formatDateShort(safeCaseData.dateOfIncident)}</p>
                 </div>
               </div>
             </div>
@@ -190,9 +195,9 @@ export default function CaseDetailPage({ caseData, onBack }) {
                 <div className="absolute left-4 top-2 bottom-2 w-px bg-edge" />
 
                 <ul className="space-y-6">
-                  {caseData.timeline.map((step, i) => {
+                  {safeCaseData.timeline.map((step, i) => {
                     const iconCfg = TIMELINE_ICONS[step.event] || DEFAULT_ICON;
-                    const isLast = i === caseData.timeline.length - 1;
+                    const isLast = i === safeCaseData.timeline.length - 1;
 
                     return (
                       <li key={i} className="relative flex gap-4">
@@ -219,7 +224,7 @@ export default function CaseDetailPage({ caseData, onBack }) {
           </Section>
 
           {/* ── Decision / Sanction Box ─────────────────────────── */}
-          {caseData.decision && (
+          {safeCaseData.decision && (
             <Section
               title="Decision & Sanction"
               icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.97zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.97z" /></svg>}
@@ -228,26 +233,26 @@ export default function CaseDetailPage({ caseData, onBack }) {
                 {/* Verdict badge */}
                 <div className="flex items-center gap-3 mb-4">
                   <span className={`px-3 py-1 text-sm font-semibold rounded-md ${
-                    caseData.decision.verdict === 'Warning' ? 'bg-amber-50 dark:bg-amber-950/40 text-warning border border-amber-200 dark:border-amber-800/50'
-                    : caseData.decision.verdict === 'Suspension' ? 'bg-red-50 dark:bg-red-950/40 text-danger border border-red-200 dark:border-red-800/50'
-                    : caseData.decision.verdict === 'Expulsion' ? 'bg-red-100 dark:bg-red-900/40 text-danger border border-red-300 dark:border-red-700/50'
+                    safeCaseData.decision.verdict === 'Warning' ? 'bg-amber-50 dark:bg-amber-950/40 text-warning border border-amber-200 dark:border-amber-800/50'
+                    : safeCaseData.decision.verdict === 'Suspension' ? 'bg-red-50 dark:bg-red-950/40 text-danger border border-red-200 dark:border-red-800/50'
+                    : safeCaseData.decision.verdict === 'Expulsion' ? 'bg-red-100 dark:bg-red-900/40 text-danger border border-red-300 dark:border-red-700/50'
                     : 'bg-surface-200 text-ink-secondary border border-edge'
                   }`}>
-                    {caseData.decision.verdict}
+                    {safeCaseData.decision.verdict}
                   </span>
-                  <span className="text-xs text-ink-muted">Issued {formatDate(caseData.decision.date)}</span>
+                  <span className="text-xs text-ink-muted">Issued {formatDate(safeCaseData.decision.date)}</span>
                 </div>
 
                 {/* Details */}
                 <div className="bg-surface-200 rounded-lg p-4 border border-edge-subtle">
-                  <p className="text-sm text-ink leading-relaxed">{caseData.decision.details}</p>
+                  <p className="text-sm text-ink leading-relaxed">{safeCaseData.decision.details}</p>
                 </div>
 
                 {/* Digital signature placeholder */}
                 <div className="mt-4 pt-4 border-t border-edge-subtle flex items-center justify-between">
                   <div>
                     <p className="text-xs text-ink-muted">Issued by</p>
-                    <p className="text-sm font-medium text-ink mt-0.5">{caseData.decision.issuedBy}</p>
+                    <p className="text-sm font-medium text-ink mt-0.5">{safeCaseData.decision.issuedBy}</p>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/50 rounded-md">
                     <svg className="w-4 h-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -269,12 +274,12 @@ export default function CaseDetailPage({ caseData, onBack }) {
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center">
                 <span className="text-sm font-bold text-brand">
-                  {caseData.studentName.split(' ').map(n => n[0]).join('')}
+                  {safeCaseData.studentName?.split(' ').map(n => n[0]).join('')}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-ink">{caseData.studentName}</p>
-                <p className="text-xs text-ink-tertiary">{caseData.studentId} · {caseData.department}</p>
+                <p className="text-sm font-semibold text-ink">{safeCaseData.studentName}</p>
+                <p className="text-xs text-ink-tertiary">{safeCaseData.studentId} · {safeCaseData.department}</p>
               </div>
             </div>
             <button className="w-full px-3 py-2 text-xs font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-100 text-center">
@@ -292,11 +297,11 @@ export default function CaseDetailPage({ caseData, onBack }) {
                 <h3 className="text-sm font-semibold text-ink">Evidence</h3>
               </div>
               <span className="text-[11px] font-medium text-ink-muted bg-surface-200 px-2 py-0.5 rounded">
-                {caseData.evidence.length} files
+                {safeCaseData.evidence.length} files
               </span>
             </div>
             <ul className="divide-y divide-edge-subtle">
-              {caseData.evidence.map((file) => (
+              {safeCaseData.evidence.map((file) => (
                 <li key={file.name} className="px-6 py-3 flex items-center gap-3 hover:bg-surface-200/50 transition-colors duration-100">
                   <div className="w-8 h-8 rounded-lg bg-surface-200 flex items-center justify-center text-ink-tertiary shrink-0">
                     <FileIcon type={file.type} />
@@ -332,10 +337,10 @@ export default function CaseDetailPage({ caseData, onBack }) {
               <h3 className="text-sm font-semibold text-ink">Summons</h3>
             </div>
 
-            {caseData.hearingDate ? (
+            {safeCaseData.hearingDate ? (
               <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-lg p-3 mb-4">
                 <p className="text-xs text-ink-muted">Hearing Date</p>
-                <p className="text-sm font-semibold text-brand mt-0.5">{formatDate(caseData.hearingDate)}</p>
+                <p className="text-sm font-semibold text-brand mt-0.5">{formatDate(safeCaseData.hearingDate)}</p>
               </div>
             ) : (
               <p className="text-xs text-ink-muted mb-4">No hearing scheduled yet.</p>

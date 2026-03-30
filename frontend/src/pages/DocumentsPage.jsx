@@ -13,7 +13,17 @@ const CATEGORY_STYLES = {
   Academic: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   PFE: 'border-amber-200 bg-amber-50 text-amber-700',
   Calendar: 'border-violet-200 bg-violet-50 text-violet-700',
+  Autre: 'border-slate-200 bg-slate-50 text-slate-700',
 };
+
+function mapCategory(value) {
+  const normalized = String(value || '').toLowerCase();
+  if (normalized.includes('admin')) return 'Administrative';
+  if (normalized.includes('pedagog') || normalized.includes('ens')) return 'Academic';
+  if (normalized.includes('scient')) return 'PFE';
+  if (normalized.includes('calendar')) return 'Calendar';
+  return 'Autre';
+}
 
 export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
@@ -27,7 +37,16 @@ export default function DocumentsPage() {
       try {
         const res = await request('/api/v1/student/documents');
         if (!cancelled) {
-          setDocuments(res?.data || []);
+          const rows = Array.isArray(res?.data) ? res.data : [];
+          setDocuments(rows.map((item) => ({
+            id: item.id,
+            name: item.name || item.nom || 'Document',
+            category: mapCategory(item.category || item.categorie || item.type),
+            format: item.format || 'PDF',
+            size: item.size || 'N/A',
+            updatedAt: item.updatedAt || item.createdAt || null,
+            downloadUrl: item.url || item.documentUrl || null,
+          })));
         }
       } catch {
         if (!cancelled) {
@@ -104,9 +123,14 @@ export default function DocumentsPage() {
                 </div>
                 <button
                   type="button"
-                  className="mt-4 w-full rounded-xl bg-brand px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-hover"
+                  onClick={() => {
+                    if (!doc.downloadUrl) return;
+                    window.open(doc.downloadUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                  disabled={!doc.downloadUrl}
+                  className="mt-4 w-full rounded-xl bg-brand px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-slate-400"
                 >
-                  Download
+                  {doc.downloadUrl ? 'Download' : 'Unavailable'}
                 </button>
               </article>
             ))}

@@ -1,21 +1,68 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
-function hasAdminAccess(roles) {
+function isAdminRole(roles) {
   if (!Array.isArray(roles)) return false;
-  return roles.some((role) => ['admin', 'vice_doyen'].includes(role));
+  return roles
+    .map((role) => String(role || '').toLowerCase())
+    .some((role) => ['admin', 'vice_doyen'].includes(role));
 }
 
 function getInitials(prenom, nom) {
   return `${prenom?.[0] || '?'}${nom?.[0] || '?'}`.toUpperCase();
 }
 
+function roleLabel(roleName) {
+  if (roleName === 'admin') return 'Admin';
+  if (roleName === 'enseignant') return 'Teacher';
+  if (roleName === 'etudiant') return 'Student';
+  if (roleName === 'delegue') return 'Delegate (Student)';
+  if (roleName === 'chef_specialite') return 'Chef Specialite';
+  if (roleName === 'chef_departement') return 'Chef Departement';
+  if (roleName === 'president_conseil') return 'President Conseil';
+  if (roleName === 'vice_doyen') return 'Vice Doyen';
+  if (roleName === 'admin_faculte') return 'Admin Faculte';
+  return roleName;
+}
+
+const BASE_CREATION_ROLE_NAMES = ['admin', 'enseignant', 'etudiant'];
+const STUDENT_TRACK_ROLE_NAMES = ['etudiant', 'delegue'];
+
+function getRoleTrack(roleName) {
+  if (STUDENT_TRACK_ROLE_NAMES.includes(roleName)) return 'student';
+  return 'staff';
+}
+
+function detectUserTrack(roleNames = []) {
+  return roleNames.some((roleName) => getRoleTrack(roleName) === 'student') ? 'student' : 'staff';
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatFrDate(value) {
+  return new Date(value).toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
+
 const inputClassName = 'w-full rounded-xl border border-edge bg-canvas px-3.5 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20';
 const sectionClassName = 'rounded-2xl border border-edge bg-surface shadow-card';
 
 export default function AdminUsersPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const hasLoadedDataRef = useRef(false);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +72,12 @@ export default function AdminUsersPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [lastCreatedCredentials, setLastCreatedCredentials] = useState(null);
+  const [credentialRegistry, setCredentialRegistry] = useState([]);
+  const [formMeta, setFormMeta] = useState({
+    universityName: 'Université Ibn Khaldoun - Tiaret',
+    facultyName: 'Faculté des Sciences et Technologies',
+    departmentName: 'Département Informatique',
+  });
 
   const [createForm, setCreateForm] = useState({
     email: '',
@@ -36,11 +89,41 @@ export default function AdminUsersPage() {
   });
   const [creatingUser, setCreatingUser] = useState(false);
 
-  const canAccess = useMemo(() => hasAdminAccess(user?.roles), [user?.roles]);
+  const canAccess = useMemo(() => isAdminRole(user?.roles), [user?.roles]);
+  const credentialRows = useMemo(() => {
+    return credentialRegistry
+      .map((entry) => {
+        const liveUser = users.find((u) => u.id === entry.userId);
+        return {
+          ...entry,
+          nom: liveUser?.nom || entry.nom,
+          prenom: liveUser?.prenom || entry.prenom,
+          email: liveUser?.email || entry.email,
+          telephone: liveUser?.telephone || entry.telephone || '',
+          roles: liveUser?.roles || entry.roles || [],
+        };
+      })
+      .filter((entry) => entry.tempPassword);
+  }, [credentialRegistry, users]);
+
+  const studentCredentialRows = useMemo(
+    () => credentialRows.filter((entry) => entry.source === 'bulk' && (entry.roles || []).includes('etudiant')),
+    [credentialRows]
+  );
+
+  const teacherCredentialRows = useMemo(
+    () => credentialRows.filter((entry) => entry.source === 'bulk' && (entry.roles || []).includes('enseignant')),
+    [credentialRows]
+  );
+
+  const baseCreationRoles = useMemo(
+    () => roles.filter((role) => BASE_CREATION_ROLE_NAMES.includes(role.nom)),
+    [roles]
+  );
   const stats = useMemo(() => {
     const totalUsers = users.length;
     const activeUsers = users.filter((entry) => entry.status === 'active').length;
-    const adminUsers = users.filter((entry) => hasAdminAccess(entry.roles || [])).length;
+    const adminUsers = users.filter((entry) => isAdminRole(entry.roles || [])).length;
     const suspendedUsers = users.filter((entry) => entry.status === 'suspended').length;
 
     return [
@@ -74,8 +157,8 @@ export default function AdminUsersPage() {
         authAPI.adminGetRoles(),
       ]);
 
-      const usersData = usersRes?.data?.users || [];
-      const rolesData = rolesRes?.data?.roles || [];
+      const usersData = Array.isArray(usersRes?.data) ? usersRes.data : [];
+      const rolesData = Array.isArray(rolesRes?.data) ? rolesRes.data : [];
 
       setUsers(usersData);
       setRoles(rolesData);
@@ -93,15 +176,14 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    if (!canAccess) return;
+    if (!canAccess || hasLoadedDataRef.current) return;
+    hasLoadedDataRef.current = true;
     loadData();
   }, [canAccess]);
 
   const toggleCreateRole = (roleName) => {
     setCreateForm((prev) => {
-      const selected = prev.roleNames.includes(roleName)
-        ? prev.roleNames.filter((r) => r !== roleName)
-        : [...prev.roleNames, roleName];
+      const selected = prev.roleNames.includes(roleName) ? [] : [roleName];
       return { ...prev, roleNames: selected };
     });
   };
@@ -114,6 +196,44 @@ export default function AdminUsersPage() {
         : [...current, roleName];
       return { ...prev, [userId]: next };
     });
+  };
+
+  const upsertCredentialEntry = (entry) => {
+    setCredentialRegistry((prev) => {
+      const index = prev.findIndex((item) => item.userId === entry.userId || item.email === entry.email);
+      if (index === -1) {
+        return [entry, ...prev];
+      }
+
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        ...entry,
+      };
+      return next;
+    });
+  };
+
+  const createSingleUser = async (payload, source = 'single') => {
+    const res = await authAPI.adminCreateUser(payload);
+    const createdUser = res?.data?.user;
+    const tempPassword = res?.data?.tempPassword;
+
+    if (createdUser?.email && tempPassword) {
+      upsertCredentialEntry({
+        userId: createdUser.id,
+        email: createdUser.email,
+        nom: createdUser.nom || payload.nom,
+        prenom: createdUser.prenom || payload.prenom,
+        telephone: payload.telephone || '',
+        roles: createdUser.roles || payload.roleNames,
+        tempPassword,
+        generatedAt: new Date().toISOString(),
+        source,
+      });
+    }
+
+    return { createdUser, tempPassword };
   };
 
   const handleCreateUser = async (event) => {
@@ -137,9 +257,7 @@ export default function AdminUsersPage() {
         telephone: createForm.telephone.trim() || undefined,
       };
 
-      const res = await authAPI.adminCreateUser(payload);
-      const createdUser = res?.data?.user;
-      const tempPassword = res?.data?.tempPassword;
+      const { createdUser, tempPassword } = await createSingleUser(payload, 'single');
 
       if (createdUser?.email && tempPassword) {
         setLastCreatedCredentials({
@@ -170,6 +288,7 @@ export default function AdminUsersPage() {
     }
   };
 
+
   const saveUserRoles = async (userId) => {
     const roleNames = editingRolesByUserId[userId] || [];
     if (!roleNames.length) {
@@ -183,9 +302,13 @@ export default function AdminUsersPage() {
 
     try {
       const res = await authAPI.adminUpdateUserRoles(userId, roleNames);
-      const updatedUser = res?.data?.user;
+      const updatedUser = res?.data;
       if (updatedUser?.id) {
-        setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? { ...u, roles: updatedUser.roles } : u)));
+        setUsers((prev) => prev.map((u) => (
+          u.id === updatedUser.id
+            ? { ...u, roles: updatedUser.roles || u.roles }
+            : u
+        )));
       }
       setMessage('User roles updated successfully.');
     } catch (err) {
@@ -204,9 +327,17 @@ export default function AdminUsersPage() {
 
     try {
       const res = await authAPI.adminUpdateUserStatus(userId, status);
-      const updatedUser = res?.data?.user;
+      const updatedUser = res?.data;
       if (updatedUser?.id) {
-        setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? { ...u, status: updatedUser.status } : u)));
+        setUsers((prev) => prev.map((u) => (
+          u.id === updatedUser.id
+            ? {
+                ...u,
+                status: updatedUser.status || u.status,
+                roles: updatedUser.roles || u.roles,
+              }
+            : u
+        )));
       }
       setMessage('User status updated successfully.');
     } catch (err) {
@@ -225,6 +356,256 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleResetUserPassword = async (targetUser) => {
+    if (!targetUser?.id) return;
+
+    setSavingByUserId((prev) => ({ ...prev, [targetUser.id]: true }));
+    setError('');
+    setMessage('');
+
+    try {
+      const res = await authAPI.adminResetPassword(targetUser.id);
+      const tempPassword = res?.data?.tempPassword;
+
+      if (!tempPassword) {
+        throw new Error('Temporary password was not returned by the server.');
+      }
+
+      upsertCredentialEntry({
+        userId: targetUser.id,
+        email: targetUser.email,
+        nom: targetUser.nom,
+        prenom: targetUser.prenom,
+        telephone: targetUser.telephone || '',
+        roles: targetUser.roles || [],
+        tempPassword,
+        generatedAt: new Date().toISOString(),
+      });
+
+      setLastCreatedCredentials({
+        email: targetUser.email,
+        fullName: `${targetUser.prenom} ${targetUser.nom}`.trim(),
+        roles: targetUser.roles || [],
+        tempPassword,
+        createdAt: new Date().toLocaleString(),
+      });
+
+      setMessage(`Temporary password reset for ${targetUser.prenom} ${targetUser.nom}.`);
+    } catch (err) {
+      setError(err.message || 'Failed to reset password.');
+    } finally {
+      setSavingByUserId((prev) => ({ ...prev, [targetUser.id]: false }));
+    }
+  };
+
+  const fileToDataUrl = (blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  const getLogoBase64 = async () => {
+    try {
+      const response = await fetch('/Logo.png');
+      if (!response.ok) return '';
+      const blob = await response.blob();
+      return await fileToDataUrl(blob);
+    } catch {
+      return '';
+    }
+  };
+
+  const buildOfficialRowsTable = (title, rows) => {
+    const renderedRows = rows
+      .map((row, index) => {
+        const fullName = `${row.prenom || ''} ${row.nom || ''}`.trim();
+        const roleText = (row.roles || []).join(', ');
+
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(fullName)}</td>
+            <td>${escapeHtml(row.email)}</td>
+            <td>${escapeHtml(row.telephone || '-')}</td>
+            <td>${escapeHtml(roleText || '-')}</td>
+            <td>${escapeHtml(row.tempPassword)}</td>
+            <td>${escapeHtml(formatFrDate(row.generatedAt || new Date().toISOString()))}</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    return `
+      <h3>${escapeHtml(title)}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>Nom et Prénom</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Rôle</th>
+            <th>Mot de passe</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${renderedRows || '<tr><td colspan="7">Aucune donnée</td></tr>'}
+        </tbody>
+      </table>
+    `;
+  };
+
+  const exportOfficialCredentialLists = async () => {
+    setError('');
+    setMessage('');
+
+    if (studentCredentialRows.length === 0 && teacherCredentialRows.length === 0) {
+      setError('No data to export.');
+      return;
+    }
+
+    const logoDataUrl = await getLogoBase64();
+    const today = new Date();
+    const dateLabel = today.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            body {
+              font-family: Calibri, Arial, sans-serif;
+              margin: 20px;
+              color: #000;
+            }
+
+            .header {
+              text-align: center;
+            }
+
+            .title {
+              font-size: 20px;
+              font-weight: bold;
+              margin-top: 10px;
+            }
+
+            .rule {
+              border-top: 2px solid black;
+              margin: 10px 0;
+            }
+
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              margin-top: 10px;
+              margin-bottom: 20px;
+            }
+
+            th, td {
+              border: 1px solid black;
+              padding: 6px;
+              font-size: 12px;
+              text-align: center;
+            }
+
+            th {
+              background-color: #d9d9d9;
+              font-weight: bold;
+            }
+
+            .footer {
+              margin-top: 30px;
+            }
+
+            .signatures td {
+              border: none;
+              padding-top: 40px;
+            }
+            
+            .logo-container {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            
+            .logo-img {
+              max-width: 100px;
+              max-height: 100px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
+            <h3>وزارة التعليم العالي و البحث العلمي</h3>
+
+            ${logoDataUrl ? `<div class="logo-container"><img src="${logoDataUrl}" class="logo-img" /></div>` : ''}
+
+            <h2>${escapeHtml(formMeta.universityName)}</h2>
+            <p>Faculté : ${escapeHtml(formMeta.facultyName)}</p>
+            <p>Département : ${escapeHtml(formMeta.departmentName)}</p>
+
+            <div class="rule"></div>
+
+            <div class="title">FICHE OFFICIELLE DE CRÉATION DES UTILISATEURS</div>
+
+            <div class="rule"></div>
+
+            <p>Date : ${escapeHtml(dateLabel)}</p>
+          </div>
+
+          ${studentCredentialRows.length > 0 ? buildOfficialRowsTable('Liste des Étudiants', studentCredentialRows) : ''}
+          ${teacherCredentialRows.length > 0 ? buildOfficialRowsTable('Liste des Enseignants', teacherCredentialRows) : ''}
+
+          <div class="footer">
+            <table class="signatures" width="100%">
+              <tr>
+                <td>Signature de l'Utilisateur</td>
+                <td>Signature de l'Administration</td>
+              </tr>
+            </table>
+
+            <p style="text-align:center; margin-top:20px;">
+              Cachet officiel de l'établissement
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], {
+      type: 'application/vnd.ms-excel;charset=utf-8;',
+    });
+
+    const fileName = `fiche_utilisateurs_${today.toISOString().slice(0, 10)}.xls`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setMessage('✅ Excel exported successfully with logo and official format.');
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="rounded-2xl border border-edge bg-surface p-8 shadow-card">
+        <div className="flex items-center gap-3 text-ink-secondary">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
+          <span>Loading user management...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!canAccess) {
     return (
       <div className="rounded-2xl border border-edge bg-surface p-8 shadow-card">
@@ -234,17 +615,6 @@ export default function AdminUsersPage() {
           <p className="mt-2 text-sm text-ink-secondary">
             Only administrators and vice deans can create accounts, assign roles, and manage access.
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="rounded-2xl border border-edge bg-surface p-8 shadow-card">
-        <div className="flex items-center gap-3 text-ink-secondary">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
-          <span>Loading admin user management...</span>
         </div>
       </div>
     );
@@ -278,16 +648,89 @@ export default function AdminUsersPage() {
       {message ? <div className="rounded-2xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success shadow-card">{message}</div> : null}
       {error ? <div className="rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger shadow-card">{error}</div> : null}
 
+      <section className={`${sectionClassName} p-6`}>
+        <div className="flex flex-col gap-2 border-b border-edge-subtle pb-5">
+          <h2 className="text-xl font-semibold tracking-tight text-ink">Official Excel Formulaire</h2>
+          <p className="text-sm text-ink-secondary">
+            Generate two official lists (students and teachers) with temporary passwords, department, logo, and date.
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-ink">Université</span>
+            <input
+              type="text"
+              value={formMeta.universityName}
+              onChange={(e) => setFormMeta((prev) => ({ ...prev, universityName: e.target.value }))}
+              className={inputClassName}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-ink">Faculté</span>
+            <input
+              type="text"
+              value={formMeta.facultyName}
+              onChange={(e) => setFormMeta((prev) => ({ ...prev, facultyName: e.target.value }))}
+              className={inputClassName}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-ink">Département</span>
+            <input
+              type="text"
+              value={formMeta.departmentName}
+              onChange={(e) => setFormMeta((prev) => ({ ...prev, departmentName: e.target.value }))}
+              className={inputClassName}
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+          <button
+            type="button"
+            onClick={exportOfficialCredentialLists}
+            className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover"
+          >
+            Exporter le formulaire Excel officiel
+          </button>
+        </div>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
         <div className={`${sectionClassName} p-6`}>
           <div className="flex flex-col gap-2 border-b border-edge-subtle pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold tracking-tight text-ink">Create New User</h2>
-              <p className="mt-1 text-sm text-ink-secondary">Fill the identity details, choose one or more roles, then generate secure first-login credentials.</p>
+              <p className="mt-1 text-sm text-ink-secondary">Single-user creation is managed here. Use the dedicated list page for table-based bulk creation.</p>
             </div>
             <div className="rounded-full border border-brand/20 bg-brand-light px-3 py-1 text-xs font-medium text-brand">
               {roles.length} roles available
             </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/admin/users/list-create')}
+              className="rounded-full border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+            >
+              Open list creation page
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/admin/academic/management')}
+              className="rounded-full border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              Open academic structure page
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/admin/academic/assignments')}
+              className="rounded-full border border-indigo-700 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            >
+              Open assignments page
+            </button>
           </div>
 
           <form onSubmit={handleCreateUser} className="mt-6 space-y-6">
@@ -368,7 +811,7 @@ export default function AdminUsersPage() {
                 </div>
               ) : null}
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {roles.map((role) => {
+                {baseCreationRoles.map((role) => {
                   const selected = createForm.roleNames.includes(role.nom);
                   return (
                     <label
@@ -386,7 +829,7 @@ export default function AdminUsersPage() {
                         onChange={() => toggleCreateRole(role.nom)}
                       />
                       <span className="min-w-0">
-                        <span className="block text-sm font-medium text-ink">{role.nom}</span>
+                        <span className="block text-sm font-medium text-ink">{roleLabel(role.nom)}</span>
                         <span className="mt-1 block text-xs text-ink-tertiary">{role.description || 'Institutional access role'}</span>
                       </span>
                     </label>
@@ -422,14 +865,24 @@ export default function AdminUsersPage() {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-edge bg-canvas px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-tertiary">Role Coverage</p>
+            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-900">Academic Workflow</p>
+              <p className="mt-2 text-xs text-indigo-800">Use dedicated pages for structure creation and assignments.</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {roles.map((role) => (
-                  <span key={`catalog-${role.id}`} className="rounded-full border border-edge bg-surface px-2.5 py-1 text-xs font-medium text-ink-secondary">
-                    {role.nom}
-                  </span>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard/admin/academic/management')}
+                  className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                >
+                  Go to Academic Structure
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard/admin/academic/assignments')}
+                  className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                >
+                  Go to Assignments
+                </button>
               </div>
             </div>
 
@@ -483,7 +936,7 @@ export default function AdminUsersPage() {
                   <div className="mt-2 flex flex-wrap gap-2">
                     {(lastCreatedCredentials.roles || []).map((roleName) => (
                       <span key={roleName} className="rounded-full border border-brand/25 bg-brand-light px-2 py-1 text-xs font-medium text-brand">
-                        {roleName}
+                        {roleLabel(roleName)}
                       </span>
                     ))}
                   </div>
@@ -569,7 +1022,7 @@ export default function AdminUsersPage() {
                   <div className="flex flex-wrap justify-end gap-2">
                     {(u.roles || []).map((r) => (
                       <span key={`${u.id}-${r}`} className="rounded-full border border-brand/25 bg-brand-light px-2.5 py-1 text-xs font-medium text-brand">
-                        {r}
+                        {roleLabel(r)}
                       </span>
                     ))}
                   </div>
@@ -618,7 +1071,14 @@ export default function AdminUsersPage() {
                     <span className="text-xs text-ink-tertiary">{(editingRolesByUserId[u.id] || []).length} selected</span>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {roles.map((role) => {
+                    {roles
+                    .filter((role) => {
+                      const track = detectUserTrack(editingRolesByUserId[u.id] || u.roles || []);
+                      return track === 'student'
+                        ? STUDENT_TRACK_ROLE_NAMES.includes(role.nom)
+                        : !STUDENT_TRACK_ROLE_NAMES.includes(role.nom);
+                    })
+                    .map((role) => {
                       const checked = (editingRolesByUserId[u.id] || []).includes(role.nom);
                       return (
                         <label
@@ -635,7 +1095,7 @@ export default function AdminUsersPage() {
                             checked={checked}
                             onChange={() => toggleUserRole(u.id, role.nom)}
                           />
-                          <span>{role.nom}</span>
+                          <span>{roleLabel(role.nom)}</span>
                         </label>
                       );
                     })}
@@ -644,14 +1104,24 @@ export default function AdminUsersPage() {
 
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-edge-subtle pt-4">
                   <p className="text-xs text-ink-tertiary">Changes apply immediately after saving.</p>
-                  <button
-                    type="button"
-                    onClick={() => saveUserRoles(u.id)}
-                    disabled={!!savingByUserId[u.id]}
-                    className="rounded-xl border border-edge bg-surface-200 px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface disabled:opacity-60"
-                  >
-                    {savingByUserId[u.id] ? 'Saving...' : 'Save Roles'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleResetUserPassword(u)}
+                      disabled={!!savingByUserId[u.id]}
+                      className="rounded-xl border border-edge bg-canvas px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/30 hover:text-brand disabled:opacity-60"
+                    >
+                      {savingByUserId[u.id] ? 'Processing...' : 'Reset Temp Password'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveUserRoles(u.id)}
+                      disabled={!!savingByUserId[u.id]}
+                      className="rounded-xl border border-edge bg-surface-200 px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface disabled:opacity-60"
+                    >
+                      {savingByUserId[u.id] ? 'Saving...' : 'Save Roles'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

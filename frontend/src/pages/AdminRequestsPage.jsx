@@ -96,6 +96,7 @@ function FileIcon({ type }) {
 export default function AdminRequestsPage() {
   const [inbox, setInbox] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('urgency');
@@ -106,8 +107,8 @@ export default function AdminRequestsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await request.get('/api/v1/admin/requests');
-        setInbox(res.data ?? []);
+        const res = await request('/api/v1/requests/admin/inbox');
+        setInbox(Array.isArray(res?.data) ? res.data : []);
       } catch {
         /* endpoint may not exist yet */
       } finally {
@@ -116,11 +117,67 @@ export default function AdminRequestsPage() {
     })();
   }, []);
 
+  const submitDecision = async () => {
+    if (!actionModal?.request || actionLoading) return;
+
+    const target = actionModal.request;
+    const basePath = target.category === 'justification'
+      ? `/api/v1/requests/admin/justifications/${target.requestId}/decision`
+      : `/api/v1/requests/admin/reclamations/${target.requestId}/decision`;
+
+    const action = actionModal.type === 'approve'
+      ? 'approve'
+      : actionModal.type === 'reject'
+        ? 'reject'
+        : 'info';
+
+    try {
+      setActionLoading(true);
+      await request(basePath, {
+        method: 'POST',
+        body: JSON.stringify({
+          action,
+          responseText,
+        }),
+      });
+
+      const nextStatus =
+        action === 'approve' ? 'resolved' : action === 'reject' ? 'rejected' : 'info-requested';
+
+      setInbox((prev) => prev.map((item) => (
+        item.requestId === target.requestId && item.category === target.category
+          ? {
+              ...item,
+              status: nextStatus,
+              internalNotes: responseText || item.internalNotes,
+            }
+          : item
+      )));
+
+      setSelectedRequest((prev) => {
+        if (!prev) return prev;
+        if (prev.requestId !== target.requestId || prev.category !== target.category) return prev;
+        return {
+          ...prev,
+          status: nextStatus,
+          internalNotes: responseText || prev.internalNotes,
+        };
+      });
+
+      setActionModal(null);
+      setResponseText('');
+    } catch (error) {
+      alert(error?.message || 'Failed to process request decision.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   /* Filters */
   const activeRequests = inbox.filter((r) => {
-    if (filterType === 'justifications') return r.type === 'Absence Justification';
-    if (filterType === 'reclamations') return r.type === 'Grade Error';
-    if (filterType === 'other') return r.type !== 'Absence Justification' && r.type !== 'Grade Error';
+    if (filterType === 'justifications') return r.category === 'justification';
+    if (filterType === 'reclamations') return r.category === 'reclamation';
+    if (filterType === 'other') return !['justification', 'reclamation'].includes(r.category);
     return true;
   });
 
@@ -211,16 +268,24 @@ export default function AdminRequestsPage() {
               Cancel
             </button>
             <button
-              onClick={() => setActionModal(null)}
+              onClick={submitDecision}
+              disabled={actionLoading}
               className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors duration-150 ${
+                actionLoading
+                  ? 'opacity-60 cursor-not-allowed bg-surface-300 text-ink-muted'
+                  :
                 actionModal.type === 'approve' ? 'bg-success hover:bg-green-700'
                 : actionModal.type === 'reject' ? 'bg-danger hover:bg-red-700'
                 : 'bg-violet-600 hover:bg-violet-700'
               }`}
             >
-              {actionModal.type === 'approve' && 'Confirm Approval'}
-              {actionModal.type === 'reject' && 'Confirm Rejection'}
-              {actionModal.type === 'info' && 'Send Request'}
+              {actionLoading ? 'Processing...' : (
+                <>
+                  {actionModal.type === 'approve' && 'Confirm Approval'}
+                  {actionModal.type === 'reject' && 'Confirm Rejection'}
+                  {actionModal.type === 'info' && 'Send Request'}
+                </>
+              )}
             </button>
           </div>
         </div>

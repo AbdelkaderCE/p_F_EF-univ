@@ -7,8 +7,8 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading, requiresPasswordChange } = useAuth();
+export default function ProtectedRoute({ children, allowedRoles = [] }) {
+  const { isAuthenticated, loading, requiresPasswordChange, user } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -31,6 +31,14 @@ export default function ProtectedRoute({ children }) {
 
   if (requiresPasswordChange && location.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
+  }
+
+  if (allowedRoles.length > 0) {
+    const roleList = Array.isArray(user?.roles) ? user.roles : [];
+    const hasAllowedRole = roleList.some((role) => allowedRoles.includes(role));
+    if (!hasAllowedRole) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return children;

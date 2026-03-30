@@ -1,0 +1,328 @@
+import prisma from "../../config/database";
+import { Prisma, StatusReclamation } from "@prisma/client";
+import logger from "../../utils/logger";
+
+export interface CreateRequestInput {
+  titre: string;
+  description: string;
+  typeRequest: string;
+  documents?: string[];
+  studentId?: number;
+  submittedBy: number;
+}
+
+export interface UpdateRequestInput {
+  titre?: string;
+  description?: string;
+  typeRequest?: string;
+  status?: string;
+  feedback?: string;
+}
+
+export interface ApproveRequestInput {
+  requestId: number;
+  approvedBy: number;
+  feedback?: string;
+}
+
+export interface RejectRequestInput {
+  requestId: number;
+  rejectedBy: number;
+  reason: string;
+}
+
+const mapStatus = (status?: string): StatusReclamation | undefined => {
+  if (!status) return undefined;
+  const value = status.toLowerCase();
+
+  const mapping: Record<string, StatusReclamation> = {
+    en_attente: StatusReclamation.en_attente,
+    approuve: StatusReclamation.traitee,
+    approuvé: StatusReclamation.traitee,
+    rejete: StatusReclamation.refusee,
+    rejeté: StatusReclamation.refusee,
+    soumise: StatusReclamation.soumise,
+    en_cours: StatusReclamation.en_cours,
+    traitee: StatusReclamation.traitee,
+    refusee: StatusReclamation.refusee,
+  };
+
+  return mapping[value];
+};
+
+const resolveEtudiantId = async (studentId: number | undefined, submittedBy: number): Promise<number> => {
+  if (studentId) {
+    return studentId;
+  }
+
+  const etudiant = await prisma.etudiant.findUnique({
+    where: { userId: submittedBy },
+    select: { id: true },
+  });
+
+  if (!etudiant) {
+    throw new Error("Student profile not found for submitter");
+  }
+
+  return etudiant.id;
+};
+
+const resolveTypeId = async (typeRequest: string): Promise<number> => {
+  const name = typeRequest.trim();
+  const existing = await prisma.reclamationType.findFirst({
+    where: { nom: { equals: name, mode: "insensitive" } },
+    select: { id: true },
+  });
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const created = await prisma.reclamationType.create({
+    data: { nom: name },
+    select: { id: true },
+  });
+
+  return created.id;
+};
+
+export const createRequest = async (input: CreateRequestInput) => {
+  try {
+    const etudiantId = await resolveEtudiantId(input.studentId, input.submittedBy);
+    const typeId = await resolveTypeId(input.typeRequest);
+
+    const request = await prisma.reclamation.create({
+      data: {
+        objet: input.titre,
+        description: input.description,
+        etudiantId,
+        typeId,
+        status: StatusReclamation.soumise,
+        dateReclamation: new Date(),
+        reponse: input.documents?.join("\n") || null,
+      },
+      include: {
+        etudiant: {
+          include: { user: true },
+        },
+        type: true,
+        traiteParUser: {
+          select: { id: true, nom: true, prenom: true, email: true },
+        },
+      },
+    });
+
+    logger.info(`Request created: ${request.id}`);
+    return request;
+  } catch (error) {
+    logger.error("Error creating request:", error);
+    throw error;
+  }
+};
+
+export const getRequests = async (filters?: {
+  typeRequest?: string;
+  status?: string;
+  studentId?: number;
+  submittedBy?: number;
+}) => {
+  try {
+    const where: Prisma.ReclamationWhereInput = {};
+
+    if (filters?.studentId) where.etudiantId = filters.studentId;
+
+    if (filters?.submittedBy) {
+      const etudiant = await prisma.etudiant.findUnique({
+        where: { userId: filters.submittedBy },
+        select: { id: true },
+      });
+      where.etudiantId = etudiant?.id ?? -1;
+    }
+
+    if (filters?.typeRequest?.trim()) {
+      where.type = {
+        nom: {
+          equals: filters.typeRequest.trim(),
+          mode: "insensitive",
+        },
+      };
+    }
+
+    const status = mapStatus(filters?.status);
+    if (status) where.status = status;
+
+    return await prisma.reclamation.findMany({
+      where,
+      include: {
+        etudiant: {
+          include: { user: true },
+        },
+        type: true,
+        traiteParUser: {
+          select: { id: true, nom: true, prenom: true, email: true },
+        },
+      },
+      orderBy: { dateReclamation: "desc" },
+    });
+  } catch (error) {
+    logger.error("Error fetching requests:", error);
+    throw error;
+  }
+};
+
+export const getRequestById = async (id: number) => {
+  try {
+    const request = await prisma.reclamation.findUnique({
+      where: { id },
+      include: {
+        etudiant: {
+          include: { user: true },
+        },
+        type: true,
+        traiteParUser: {
+          select: { id: true, nom: true, prenom: true, email: true },
+        },
+      },
+    });
+
+    if (!request) {
+      throw new Error("Request not found");
+    }
+
+    return request;
+  } catch (error) {
+    logger.error("Error fetching request:", error);
+    throw error;
+  }
+};
+
+export const updateRequest = async (id: number, input: UpdateRequestInput) => {
+  try {
+    let typeId: number | undefined;
+    if (input.typeRequest?.trim()) {
+      typeId = await resolveTypeId(input.typeRequest);
+    }
+
+    const request = await prisma.reclamation.update({
+      where: { id },
+      data: {
+        objet: input.titre,
+        description: input.description,
+        typeId,
+        status: mapStatus(input.status),
+        reponse: input.feedback,
+      },
+      include: {
+        etudiant: {
+          include: { user: true },
+        },
+        type: true,
+      },
+    });
+
+    logger.info(`Request updated: ${id}`);
+    return request;
+  } catch (error) {
+    logger.error("Error updating request:", error);
+    throw error;
+  }
+};
+
+export const approveRequest = async (input: ApproveRequestInput) => {
+  try {
+    const request = await prisma.reclamation.update({
+      where: { id: input.requestId },
+      data: {
+        status: StatusReclamation.traitee,
+        traitePar: input.approvedBy,
+        reponse: input.feedback,
+        dateTraitement: new Date(),
+      },
+      include: {
+        etudiant: {
+          include: { user: true },
+        },
+        type: true,
+      },
+    });
+
+    logger.info(`Request approved: ${input.requestId}`);
+    return request;
+  } catch (error) {
+    logger.error("Error approving request:", error);
+    throw error;
+  }
+};
+
+export const rejectRequest = async (input: RejectRequestInput) => {
+  try {
+    const request = await prisma.reclamation.update({
+      where: { id: input.requestId },
+      data: {
+        status: StatusReclamation.refusee,
+        traitePar: input.rejectedBy,
+        reponse: input.reason,
+        dateTraitement: new Date(),
+      },
+      include: {
+        etudiant: {
+          include: { user: true },
+        },
+        type: true,
+      },
+    });
+
+    logger.info(`Request rejected: ${input.requestId}`);
+    return request;
+  } catch (error) {
+    logger.error("Error rejecting request:", error);
+    throw error;
+  }
+};
+
+export const getRequestStats = async () => {
+  try {
+    const [totalRequests, pendingRequests, approvedRequests, rejectedRequests] =
+      await Promise.all([
+        prisma.reclamation.count(),
+        prisma.reclamation.count({ where: { status: StatusReclamation.en_attente } }),
+        prisma.reclamation.count({ where: { status: StatusReclamation.traitee } }),
+        prisma.reclamation.count({ where: { status: StatusReclamation.refusee } }),
+      ]);
+
+    return {
+      totalRequests,
+      pendingRequests,
+      approvedRequests,
+      rejectedRequests,
+      approvalRate:
+        totalRequests > 0
+          ? Math.round((approvedRequests / totalRequests) * 100)
+          : 0,
+    };
+  } catch (error) {
+    logger.error("Error fetching request stats:", error);
+    throw error;
+  }
+};
+
+export const getStudentRequests = async (studentId: number) => {
+  try {
+    return await prisma.reclamation.findMany({
+      where: { etudiantId: studentId },
+      include: {
+        etudiant: {
+          include: { user: true },
+        },
+        type: true,
+        traiteParUser: {
+          select: { nom: true, prenom: true },
+        },
+      },
+      orderBy: { dateReclamation: "desc" },
+    });
+  } catch (error) {
+    logger.error("Error fetching student requests:", error);
+    throw error;
+  }
+};

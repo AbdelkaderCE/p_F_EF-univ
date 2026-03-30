@@ -29,6 +29,45 @@ function daysUntil(dateStr) {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
+function normalizeStatus(rawStatus) {
+  const s = String(rawStatus || '').toLowerCase();
+  if (['soumise', 'soumis', 'submitted'].includes(s)) return 'submitted';
+  if (['en_cours', 'en_verification', 'under-review', 'under_review'].includes(s)) return 'under-review';
+  if (['traitee', 'valide', 'resolved'].includes(s)) return 'resolved';
+  if (['refusee', 'refuse', 'rejected'].includes(s)) return 'rejected';
+  return 'submitted';
+}
+
+function normalizeReclamation(item) {
+  return {
+    id: item?.id,
+    category: 'reclamation',
+    status: normalizeStatus(item?.status),
+    title: item?.objet || 'Reclamation',
+    type: item?.type?.nom || 'Reclamation',
+    nom: item?.etudiant?.user?.nom || '',
+    prenom: item?.etudiant?.user?.prenom || '',
+    dateSubmitted: item?.createdAt || null,
+    description: item?.description || '',
+    source: item,
+  };
+}
+
+function normalizeJustification(item) {
+  return {
+    id: item?.id,
+    category: 'justification',
+    status: normalizeStatus(item?.status),
+    title: item?.motif || 'Absence Justification',
+    type: item?.type?.nom || 'Justification',
+    nom: item?.etudiant?.user?.nom || '',
+    prenom: item?.etudiant?.user?.prenom || '',
+    dateSubmitted: item?.createdAt || item?.dateAbsence || null,
+    description: item?.motif || '',
+    source: item,
+  };
+}
+
 /* ── Mock Data — Reclamations ───────────────────────────────── */
 /* Data fetched from API — see component useEffect */
 
@@ -308,10 +347,16 @@ export default function RequestsPage({ role = 'student' }) {
   const [jusEmail, setJusEmail] = useState('');
   const [jusTitle, setJusTitle] = useState('');
   const [jusType, setJusType] = useState('');
+  const [jusDateAbsence, setJusDateAbsence] = useState('');
   const [jusDescription, setJusDescription] = useState('');
   const [jusFiles, setJusFiles] = useState([]);
   const [jusDragActive, setJusDragActive] = useState(false);
   const jusFileInputRef = useRef(null);
+
+  const [reclamationTypes, setReclamationTypes] = useState([]);
+  const [justificationTypes, setJustificationTypes] = useState([]);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
 
   /* ─── Data from API ──────────────────────────────────────── */
   const [reclamations, setReclamations] = useState([]);
@@ -321,19 +366,56 @@ export default function RequestsPage({ role = 'student' }) {
   useEffect(() => {
     (async () => {
       try {
-        const [rRes, jRes] = await Promise.allSettled([
-          request.get('/api/v1/requests/reclamations'),
-          request.get('/api/v1/requests/justifications'),
+        if (!isGuest) {
+          const [rRes, jRes] = await Promise.allSettled([
+            request('/api/v1/requests/reclamations'),
+            request('/api/v1/requests/justifications'),
+          ]);
+
+          const unauthorizedFromLists =
+            (rRes.status === 'rejected' && rRes.reason?.status === 401) ||
+            (jRes.status === 'rejected' && jRes.reason?.status === 401);
+
+          if (unauthorizedFromLists) {
+            setAuthRequired(true);
+          }
+
+          if (rRes.status === 'fulfilled') {
+            const rows = Array.isArray(rRes.value?.data) ? rRes.value.data : [];
+            setReclamations(rows.map(normalizeReclamation));
+          }
+          if (jRes.status === 'fulfilled') {
+            const rows = Array.isArray(jRes.value?.data) ? jRes.value.data : [];
+            setJustifications(rows.map(normalizeJustification));
+          }
+        }
+
+        const [rtRes, jtRes] = await Promise.allSettled([
+          request('/api/v1/requests/types/reclamations'),
+          request('/api/v1/requests/types/justifications'),
         ]);
-        if (rRes.status === 'fulfilled') setReclamations(rRes.value.data ?? []);
-        if (jRes.status === 'fulfilled') setJustifications(jRes.value.data ?? []);
+
+        if (rtRes.status === 'fulfilled') {
+          setReclamationTypes(Array.isArray(rtRes.value?.data) ? rtRes.value.data : []);
+        }
+        if (jtRes.status === 'fulfilled') {
+          setJustificationTypes(Array.isArray(jtRes.value?.data) ? jtRes.value.data : []);
+        }
+
+        const unauthorizedFromTypes =
+          (rtRes.status === 'rejected' && rtRes.reason?.status === 401) ||
+          (jtRes.status === 'rejected' && jtRes.reason?.status === 401);
+
+        if (!isGuest && unauthorizedFromTypes) {
+          setAuthRequired(true);
+        }
       } catch {
         /* endpoints may not exist yet */
       } finally {
         setDataLoading(false);
       }
     })();
-  }, []);
+  }, [isGuest]);
 
   const activeData = activeCategory === 'reclamations' ? reclamations : justifications;
 
@@ -366,7 +448,98 @@ export default function RequestsPage({ role = 'student' }) {
 
   const resetJusForm = () => {
     setJusNom(''); setJusPrenom(''); setJusEmail('');
-    setJusTitle(''); setJusType(''); setJusDescription(''); setJusFiles([]);
+    setJusTitle(''); setJusType(''); setJusDateAbsence(''); setJusDescription(''); setJusFiles([]);
+  };
+
+  const submitReclamation = async () => {
+    if (submitLoading) return;
+    try {
+      if (!isGuest && authRequired) {
+        alert('You must log in first to submit a reclamation.');
+        window.location.href = '/login';
+        return;
+      }
+
+      const useCatalogType = reclamationTypes.length > 0;
+      const selectedTypeId = Number(recType);
+      if (useCatalogType && !Number.isFinite(selectedTypeId)) {
+        alert('Please select a valid reclamation type.');
+        return;
+      }
+
+      setSubmitLoading(true);
+      const created = await request('/api/v1/requests/reclamations', {
+        method: 'POST',
+        body: JSON.stringify({
+          typeId: useCatalogType ? selectedTypeId : undefined,
+          typeName: useCatalogType ? undefined : recType,
+          objet: recTitle.trim(),
+          description: recDescription.trim(),
+          priorite: 'normale',
+        }),
+      });
+
+      if (created?.data) {
+        setReclamations((prev) => [normalizeReclamation(created.data), ...prev]);
+      }
+      resetRecForm();
+      setView('list');
+      setActiveCategory('reclamations');
+    } catch (error) {
+      if (!isGuest && error?.status === 401) {
+        alert('Session expired or not logged in. Please sign in again.');
+        window.location.href = '/login';
+        return;
+      }
+      alert(error?.message || 'Failed to submit reclamation.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const submitJustification = async () => {
+    if (submitLoading) return;
+    try {
+      if (!isGuest && authRequired) {
+        alert('You must log in first to submit a justification.');
+        window.location.href = '/login';
+        return;
+      }
+
+      const useCatalogType = justificationTypes.length > 0;
+      const selectedTypeId = Number(jusType);
+      if (useCatalogType && !Number.isFinite(selectedTypeId)) {
+        alert('Please select a valid justification type.');
+        return;
+      }
+
+      setSubmitLoading(true);
+      const created = await request('/api/v1/requests/justifications', {
+        method: 'POST',
+        body: JSON.stringify({
+          typeId: useCatalogType ? selectedTypeId : undefined,
+          typeName: useCatalogType ? undefined : jusType,
+          dateAbsence: jusDateAbsence,
+          motif: jusDescription.trim() || jusTitle.trim(),
+        }),
+      });
+
+      if (created?.data) {
+        setJustifications((prev) => [normalizeJustification(created.data), ...prev]);
+      }
+      resetJusForm();
+      setView('list');
+      setActiveCategory('justifications');
+    } catch (error) {
+      if (!isGuest && error?.status === 401) {
+        alert('Session expired or not logged in. Please sign in again.');
+        window.location.href = '/login';
+        return;
+      }
+      alert(error?.message || 'Failed to submit justification.');
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   /* ═════════════════════════════════════════════════════════════
@@ -383,6 +556,12 @@ export default function RequestsPage({ role = 'student' }) {
             Submit a reclamation or absence justification. No account required.
           </p>
         </div>
+
+        {authRequired && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+            You are not authenticated. Please sign in to submit or view requests.
+          </div>
+        )}
 
         {/* Info banner */}
         <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg px-5 py-4 flex items-center justify-between flex-wrap gap-3">
@@ -833,9 +1012,18 @@ export default function RequestsPage({ role = 'student' }) {
               onChange={(e) => setRecType(e.target.value)}
               className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150"
             >
-              {RECLAMATION_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
+              {reclamationTypes.length > 0 ? (
+                <>
+                  <option value="">Select a type…</option>
+                  {reclamationTypes.map((t) => (
+                    <option key={t.id} value={String(t.id)}>{t.nom || `Type ${t.id}`}</option>
+                  ))}
+                </>
+              ) : (
+                RECLAMATION_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))
+              )}
             </select>
           </div>
 
@@ -901,13 +1089,14 @@ export default function RequestsPage({ role = 'student' }) {
               Save as Draft
             </button>
             <button
-              disabled={!recTitle || !recType || !recDescription || !recNom || !recPrenom || !recEmail}
+              onClick={submitReclamation}
+              disabled={authRequired || submitLoading || !recTitle || !recType || !recDescription || !recNom || !recPrenom || !recEmail}
               className="px-4 py-2.5 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
-              Submit Reclamation
+              {submitLoading ? 'Submitting...' : 'Submit Reclamation'}
             </button>
           </div>
         </div>
@@ -991,10 +1180,31 @@ export default function RequestsPage({ role = 'student' }) {
               onChange={(e) => setJusType(e.target.value)}
               className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
             >
-              {JUSTIFICATION_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
+              {justificationTypes.length > 0 ? (
+                <>
+                  <option value="">Select a type…</option>
+                  {justificationTypes.map((t) => (
+                    <option key={t.id} value={String(t.id)}>{t.nom || `Type ${t.id}`}</option>
+                  ))}
+                </>
+              ) : (
+                JUSTIFICATION_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))
+              )}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink-secondary mb-1.5">
+              Absence Date <span className="text-danger">*</span>
+            </label>
+            <input
+              type="date"
+              value={jusDateAbsence}
+              onChange={(e) => setJusDateAbsence(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
+            />
           </div>
 
           {/* Description */}
@@ -1059,13 +1269,14 @@ export default function RequestsPage({ role = 'student' }) {
               Save as Draft
             </button>
             <button
-              disabled={!jusTitle || !jusType || !jusDescription || !jusNom || !jusPrenom || !jusEmail}
+              onClick={submitJustification}
+              disabled={authRequired || submitLoading || !jusTitle || !jusType || !jusDescription || !jusNom || !jusPrenom || !jusEmail || !jusDateAbsence}
               className="px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 active:bg-emerald-800 transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
-              Submit Justification
+              {submitLoading ? 'Submitting...' : 'Submit Justification'}
             </button>
           </div>
         </div>
