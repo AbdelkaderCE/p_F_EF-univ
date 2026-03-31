@@ -17,10 +17,11 @@ function processQueue(error) {
 
 async function request(endpoint, options = {}, _isRetry = false) {
   const url = `${API_BASE}${endpoint}`;
+  const isFormDataBody = typeof FormData !== 'undefined' && options?.body instanceof FormData;
 
   const res = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormDataBody ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     },
     credentials: 'include', // send httpOnly cookies
@@ -142,6 +143,16 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify(userData),
     }),
+
+  adminImportUsersExcel: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return request('/api/v1/auth/admin/import-users-excel', {
+      method: 'POST',
+      body: formData,
+    });
+  },
 
   adminResetPassword: (userId) =>
     request(`/api/v1/auth/admin/reset-password/${userId}`, {

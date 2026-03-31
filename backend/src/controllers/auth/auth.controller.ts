@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import XLSX from "xlsx";
 import {
   registerUser,
   loginUser,
@@ -31,6 +32,88 @@ import {
   refreshTokenCookieOptions,
 } from "../../config/auth";
 import { AuthRequest } from "../../middlewares/auth.middleware";
+
+type ParsedExcelImportRow = {
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone?: string;
+  roleNames: string[];
+  promoId?: number;
+  specialiteId?: number;
+  moduleIds?: number[];
+  anneeUniversitaire?: string;
+};
+
+const pickCellValue = (row: Record<string, unknown>, aliases: string[]): string => {
+  for (const alias of aliases) {
+    if (Object.prototype.hasOwnProperty.call(row, alias)) {
+      const value = row[alias];
+      if (value === null || value === undefined) {
+        return "";
+      }
+      return String(value).trim();
+    }
+  }
+  return "";
+};
+
+const parseOptionalPositiveInteger = (rawValue: string): number | undefined => {
+  if (!rawValue) return undefined;
+  const value = Number(rawValue);
+  if (!Number.isInteger(value) || value <= 0) {
+    return undefined;
+  }
+  return value;
+};
+
+const parseOptionalPositiveIntegerList = (rawValue: string): number[] => {
+  if (!rawValue) return [];
+  return Array.from(
+    new Set(
+      rawValue
+        .split(/[;,|]/)
+        .map((part) => Number(part.trim()))
+        .filter((value) => Number.isInteger(value) && value > 0)
+    )
+  );
+};
+
+const parseRoleNames = (rawValue: string): string[] => {
+  if (!rawValue) return [];
+  return Array.from(
+    new Set(
+      rawValue
+        .split(/[;,|]/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+    )
+  );
+};
+
+const parseExcelUserRow = (row: Record<string, unknown>): ParsedExcelImportRow => {
+  const nom = pickCellValue(row, ["nom", "lastName", "last_name"]);
+  const prenom = pickCellValue(row, ["prenom", "firstName", "first_name"]);
+  const email = pickCellValue(row, ["email", "mail"]);
+  const telephone = pickCellValue(row, ["telephone", "phone", "tel"]);
+  const roleNames = parseRoleNames(pickCellValue(row, ["roles", "role", "roleNames", "role_names"]));
+  const promoId = parseOptionalPositiveInteger(pickCellValue(row, ["promoId", "promo_id"]));
+  const specialiteId = parseOptionalPositiveInteger(pickCellValue(row, ["specialiteId", "specialite_id"]));
+  const moduleIds = parseOptionalPositiveIntegerList(pickCellValue(row, ["moduleIds", "module_ids"]));
+  const anneeUniversitaire = pickCellValue(row, ["anneeUniversitaire", "annee_universitaire"]);
+
+  return {
+    nom,
+    prenom,
+    email,
+    telephone: telephone || undefined,
+    roleNames,
+    promoId,
+    specialiteId,
+    moduleIds: moduleIds.length > 0 ? moduleIds : undefined,
+    anneeUniversitaire: anneeUniversitaire || undefined,
+  };
+};
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -331,6 +414,140 @@ export const createUserByAdminHandler = async (req: AuthRequest, res: Response) 
       success: false,
       error: {
         code: "CREATE_USER_FAILED",
+        message: error.message,
+      },
+    });
+  }
+};
+
+export const importUsersByAdminExcelHandler = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        },
+      });
+    }
+
+    const uploadedFile = req.file;
+    if (!uploadedFile?.buffer) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "MISSING_FILE",
+          message: "Excel file is required",
+        },
+      });
+    }
+
+    const workbook = XLSX.read(uploadedFile.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames[0];
+
+    if (!firstSheetName) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_FILE",
+          message: "Excel file does not contain any sheet",
+        },
+      });
+    }
+
+    const worksheet = workbook.Sheets[firstSheetName];
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
+      defval: "",
+      raw: false,
+    });
+
+    if (!rows.length) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "EMPTY_FILE",
+          message: "Excel file is empty",
+        },
+      });
+    }
+
+    const created: Array<{
+      rowNumber: number;
+      userId: number;
+      nom: string;
+      prenom: string;
+      email: string;
+      telephone: string;
+      roleNames: string[];
+      tempPassword: string;
+      generatedAt: string;
+    }> = [];
+    const failures: Array<{ rowNumber: number; email: string; reason: string }> = [];
+
+    for (let index = 0; index < rows.length; index += 1) {
+      const rowNumber = index + 2;
+      const parsedRow = parseExcelUserRow(rows[index]);
+
+      if (!parsedRow.nom || !parsedRow.prenom || !parsedRow.email) {
+        failures.push({
+          rowNumber,
+          email: parsedRow.email || "",
+          reason: "nom, prenom, and email are required",
+        });
+        continue;
+      }
+
+      if (!parsedRow.roleNames.length) {
+        failures.push({
+          rowNumber,
+          email: parsedRow.email,
+          reason: "At least one role is required",
+        });
+        continue;
+      }
+
+      try {
+        const result = await createUserByAdmin(parsedRow);
+        created.push({
+          rowNumber,
+          userId: result.user.id,
+          nom: result.user.nom,
+          prenom: result.user.prenom,
+          email: result.user.email,
+          telephone: parsedRow.telephone || "",
+          roleNames: result.user.roles,
+          tempPassword: result.tempPassword,
+          generatedAt: new Date().toISOString(),
+        });
+      } catch (error: any) {
+        failures.push({
+          rowNumber,
+          email: parsedRow.email,
+          reason: error?.message || "Failed to create user",
+        });
+      }
+    }
+
+    return res.status(created.length > 0 ? 201 : 200).json({
+      success: true,
+      data: {
+        totalRows: rows.length,
+        createdCount: created.length,
+        failedCount: failures.length,
+        created,
+        failures,
+      },
+      message:
+        created.length > 0
+          ? "Excel import completed"
+          : "Excel import processed, but no accounts were created",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: "IMPORT_USERS_FAILED",
         message: error.message,
       },
     });
