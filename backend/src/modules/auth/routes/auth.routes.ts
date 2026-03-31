@@ -55,7 +55,9 @@ const excelUpload = multer({
 router.post("/register", registerLimiter, register);
 router.post("/login", loginLimiter, login);
 router.post("/refresh-token", refreshLimiter, refresh);
-router.post("/logout", logout);
+
+// ==================== LOGOUT (Protected — requires auth) ====================
+router.post("/logout", requireAuth, logout);
 
 // ── Password reset (public — no auth required) ──────────────────
 router.post("/forgot-password", forgotPasswordHandler);

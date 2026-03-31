@@ -82,6 +82,10 @@ async function main() {
     data: { nom: "M2 ISI 2024-2025", specialiteId: specISI.id, anneeUniversitaire: "2024-2025", section: "A" },
   });
 
+  const promo2025B = await prisma.promo.create({
+    data: { nom: "M2 ISI 2024-2025", specialiteId: specISI.id, anneeUniversitaire: "2024-2025", section: "B" },
+  });
+
   console.log("✅ University structure created (Faculté → Département → Filière → Spécialité → Promo)");
 
   // ── Grades ───────────────────────────────────────────────
@@ -204,7 +208,7 @@ async function main() {
     nom: "Mehdaoui",
     prenom: "Yacine",
     roleNames: ["etudiant"],
-    etudiantData: { promoId: promo2025.id, matricule: "212131234568" },
+    etudiantData: { promoId: promo2025B.id, matricule: "212131234568" },
   });
 
   await createUser({
@@ -221,6 +225,198 @@ async function main() {
     prenom: "Rachid",
     roleNames: ["president_conseil"],
   });
+
+  // ── Direct assignments: teachers ↔ promos/modules/groups, students ↔ promo/section/groups ──
+  const teacherUser = await prisma.user.findUnique({
+    where: { email: "teacher@univ-tiaret.dz" },
+    include: { enseignant: true },
+  });
+  const teacher2User = await prisma.user.findUnique({
+    where: { email: "teacher2@univ-tiaret.dz" },
+    include: { enseignant: true },
+  });
+  const studentUser = await prisma.user.findUnique({
+    where: { email: "student@univ-tiaret.dz" },
+    include: { etudiant: true },
+  });
+  const student2User = await prisma.user.findUnique({
+    where: { email: "student2@univ-tiaret.dz" },
+    include: { etudiant: true },
+  });
+  const delegateUser = await prisma.user.findUnique({
+    where: { email: "delegate@univ-tiaret.dz" },
+    include: { etudiant: true },
+  });
+
+  if (
+    !teacherUser?.enseignant?.id ||
+    !teacher2User?.enseignant?.id ||
+    !studentUser?.etudiant?.id ||
+    !student2User?.etudiant?.id ||
+    !delegateUser?.etudiant?.id
+  ) {
+    throw new Error("Missing enseignant/etudiant records required for direct assignments.");
+  }
+
+  const moduleAlgo = await prisma.module.upsert({
+    where: { code: "ISI-M2-ALGO-ADV" },
+    update: {},
+    create: {
+      nom: "Algorithmique Avancée",
+      code: "ISI-M2-ALGO-ADV",
+      semestre: 3,
+      specialiteId: specISI.id,
+      volumeCours: 24,
+      volumeTd: 18,
+      volumeTp: 0,
+      credit: 6,
+      coef: 3,
+      description: "UE de tronc commun M2 ISI",
+    },
+  });
+
+  const moduleCloud = await prisma.module.upsert({
+    where: { code: "ISI-M2-CLOUD" },
+    update: {},
+    create: {
+      nom: "Cloud et DevOps",
+      code: "ISI-M2-CLOUD",
+      semestre: 3,
+      specialiteId: specISI.id,
+      volumeCours: 20,
+      volumeTd: 10,
+      volumeTp: 14,
+      credit: 5,
+      coef: 2,
+      description: "Infrastructure cloud et intégration continue",
+    },
+  });
+
+  const moduleAI = await prisma.module.upsert({
+    where: { code: "ISI-M2-AI" },
+    update: {},
+    create: {
+      nom: "IA Appliquée",
+      code: "ISI-M2-AI",
+      semestre: 3,
+      specialiteId: specISI.id,
+      volumeCours: 18,
+      volumeTd: 12,
+      volumeTp: 12,
+      credit: 5,
+      coef: 2,
+      description: "Méthodes d'IA pour applications métiers",
+    },
+  });
+
+  const ensureEnseignement = async (enseignantId: number, moduleId: number, promoId: number, type: "cours" | "td" | "tp") => {
+    const existing = await prisma.enseignement.findFirst({
+      where: {
+        enseignantId,
+        moduleId,
+        promoId,
+        type,
+        anneeUniversitaire: "2024-2025",
+      },
+    });
+
+    if (existing) return existing;
+
+    return prisma.enseignement.create({
+      data: {
+        enseignantId,
+        moduleId,
+        promoId,
+        type,
+        anneeUniversitaire: "2024-2025",
+      },
+    });
+  };
+
+  await ensureEnseignement(teacherUser.enseignant.id, moduleAlgo.id, promo2025.id, "cours");
+  await ensureEnseignement(teacherUser.enseignant.id, moduleCloud.id, promo2025.id, "td");
+  await ensureEnseignement(teacher2User.enseignant.id, moduleAI.id, promo2025B.id, "cours");
+  await ensureEnseignement(teacher2User.enseignant.id, moduleCloud.id, promo2025B.id, "tp");
+
+  const sujet1 = await prisma.pfeSujet.create({
+    data: {
+      titre: "Plateforme de gestion intelligente des réclamations",
+      description: "Conception d'une plateforme web avec workflows automatisés.",
+      enseignantId: teacherUser.enseignant.id,
+      promoId: promo2025.id,
+      typeProjet: "application",
+      status: "valide",
+      anneeUniversitaire: "2024-2025",
+      maxGrps: 2,
+    },
+  });
+
+  const sujet2 = await prisma.pfeSujet.create({
+    data: {
+      titre: "Analyse prédictive des risques disciplinaires",
+      description: "Modèle d'IA pour la détection précoce des risques académiques.",
+      enseignantId: teacher2User.enseignant.id,
+      promoId: promo2025B.id,
+      typeProjet: "recherche",
+      status: "valide",
+      anneeUniversitaire: "2024-2025",
+      maxGrps: 1,
+    },
+  });
+
+  const groupA = await prisma.groupPfe.create({
+    data: {
+      nom: "Groupe ISI-A1",
+      sujetFinalId: sujet1.id,
+      coEncadrantId: teacher2User.enseignant.id,
+      dateCreation: new Date("2024-10-01"),
+      dateAffectation: new Date("2024-10-05"),
+    },
+  });
+
+  const groupB = await prisma.groupPfe.create({
+    data: {
+      nom: "Groupe ISI-B1",
+      sujetFinalId: sujet2.id,
+      coEncadrantId: teacherUser.enseignant.id,
+      dateCreation: new Date("2024-10-01"),
+      dateAffectation: new Date("2024-10-06"),
+    },
+  });
+
+  const ensureGroupMember = async (groupId: number, etudiantId: number, role: "chef_groupe" | "membre") => {
+    const existing = await prisma.groupMember.findFirst({
+      where: { groupId, etudiantId },
+    });
+    if (existing) return existing;
+    return prisma.groupMember.create({
+      data: { groupId, etudiantId, role },
+    });
+  };
+
+  await ensureGroupMember(groupA.id, studentUser.etudiant.id, "membre");
+  await ensureGroupMember(groupA.id, delegateUser.etudiant.id, "chef_groupe");
+  await ensureGroupMember(groupB.id, student2User.etudiant.id, "chef_groupe");
+
+  const ensureJury = async (groupId: number, enseignantId: number, role: "president" | "examinateur" | "rapporteur") => {
+    const existing = await prisma.pfeJury.findFirst({
+      where: { groupId, enseignantId, role },
+    });
+    if (existing) return existing;
+    return prisma.pfeJury.create({
+      data: { groupId, enseignantId, role },
+    });
+  };
+
+  await ensureJury(groupA.id, teacherUser.enseignant.id, "president");
+  await ensureJury(groupA.id, teacher2User.enseignant.id, "examinateur");
+  await ensureJury(groupB.id, teacher2User.enseignant.id, "president");
+  await ensureJury(groupB.id, teacherUser.enseignant.id, "rapporteur");
+
+  console.log("✅ Direct assignments created:");
+  console.log("   • Teachers assigned to promos/modules (enseignements)");
+  console.log("   • Students assigned to promo sections A/B");
+  console.log("   • PFE groups created with student members and teacher jury/co-encadrant");
 
   console.log("\n🎉 Seeding complete!\n");
   console.log("────────────────────────────────────────────");

@@ -439,23 +439,29 @@ export default function ActualitesPage({ role }) {
 
             <div className="p-4 space-y-1.5">
               {[
-                { labelKey: 'actualites.universityWebsite', icon: 'globe' },
-                { labelKey: 'actualites.moodlePlatform', icon: 'book' },
-                { labelKey: 'actualites.digitalLibrary', icon: 'library' },
-                { labelKey: 'actualites.emailPortal', icon: 'mail' },
+                { label: 'University Website', href: 'https://fmi.univ-tiaret.dz/' },
+                { label: 'Moodle', href: 'https://moodle.univ-tiaret.dz/' },
+                { label: 'University Library', href: 'https://biblio.univ-tiaret.dz/ar/' },
+                { label: 'Email', href: 'mailto:medsaidghoulam@gmail.com', text: 'medsaidghoulam@gmail.com' },
               ].map((link) => (
-                <button
-                  key={link.labelKey}
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target={link.href.startsWith('http') ? '_blank' : undefined}
+                  rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-ink-secondary hover:bg-surface-200 hover:text-ink transition-colors duration-100"
                 >
                   <svg className="w-4 h-4 shrink-0 text-ink-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                   </svg>
-                  {t(link.labelKey)}
+                  <span className="text-left">
+                    <span className="block">{link.label}</span>
+                    <span className="block text-xs text-ink-muted">{link.text || link.href}</span>
+                  </span>
                   <svg className="w-3.5 h-3.5 ml-auto text-ink-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                   </svg>
-                </button>
+                </a>
               ))}
             </div>
           </div>

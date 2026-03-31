@@ -15,6 +15,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import RequestDetailPage from './RequestDetailPage';
 import AdminRequestsPage from './AdminRequestsPage';
 import request from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 /* ── Helpers ────────────────────────────────────────────────── */
 
@@ -315,6 +316,12 @@ function FileUploadZone({ files, setFiles, dragActive, setDragActive, fileInputR
    ═══════════════════════════════════════════════════════════════ */
 
 export default function RequestsPage({ role = 'student' }) {
+  const { user } = useAuth();
+  const roleList = Array.isArray(user?.roles) ? user.roles.map((r) => String(r || '').toLowerCase()) : [];
+  const hasStudentRole = roleList.some((r) => ['etudiant', 'delegue'].includes(r));
+  const hasTeacherRole = roleList.includes('enseignant');
+  const hasAdminRole = roleList.some((r) => ['admin', 'vice_doyen'].includes(r));
+  const canAccessAdminInbox = hasAdminRole;
   const isGuest = role === 'guest';
 
   /* ─── State (all hooks MUST be above any early return) ───── */
@@ -366,7 +373,7 @@ export default function RequestsPage({ role = 'student' }) {
   useEffect(() => {
     (async () => {
       try {
-        if (!isGuest) {
+        if (!isGuest && hasStudentRole) {
           const [rRes, jRes] = await Promise.allSettled([
             request('/api/v1/requests/reclamations'),
             request('/api/v1/requests/justifications'),
@@ -406,7 +413,7 @@ export default function RequestsPage({ role = 'student' }) {
           (rtRes.status === 'rejected' && rtRes.reason?.status === 401) ||
           (jtRes.status === 'rejected' && jtRes.reason?.status === 401);
 
-        if (!isGuest && unauthorizedFromTypes) {
+        if (!isGuest && hasStudentRole && unauthorizedFromTypes) {
           setAuthRequired(true);
         }
       } catch {
@@ -415,7 +422,13 @@ export default function RequestsPage({ role = 'student' }) {
         setDataLoading(false);
       }
     })();
-  }, [isGuest]);
+  }, [hasStudentRole, isGuest]);
+
+  useEffect(() => {
+    if (!canAccessAdminInbox && teacherTab === 'inbox') {
+      setTeacherTab('my-reclamations');
+    }
+  }, [canAccessAdminInbox, teacherTab]);
 
   const activeData = activeCategory === 'reclamations' ? reclamations : justifications;
 
@@ -457,6 +470,11 @@ export default function RequestsPage({ role = 'student' }) {
       if (!isGuest && authRequired) {
         alert('You must log in first to submit a reclamation.');
         window.location.href = '/login';
+        return;
+      }
+
+      if (!hasStudentRole) {
+        alert('Only student accounts can submit a reclamation.');
         return;
       }
 
@@ -503,6 +521,11 @@ export default function RequestsPage({ role = 'student' }) {
       if (!isGuest && authRequired) {
         alert('You must log in first to submit a justification.');
         window.location.href = '/login';
+        return;
+      }
+
+      if (!hasStudentRole) {
+        alert('Only student accounts can submit a justification.');
         return;
       }
 
@@ -622,7 +645,7 @@ export default function RequestsPage({ role = 'student' }) {
   /* ═════════════════════════════════════════════════════════════
      TEACHER/ADMIN VIEW — Tabs: My Reclamations | Student Inbox
      ═════════════════════════════════════════════════════════════ */
-  if (role === 'teacher' || role === 'admin') {
+  if (!hasStudentRole && (hasTeacherRole || hasAdminRole)) {
     /* Teacher: detail view */
     if (view === 'detail' && selectedRequest) {
       return (
@@ -682,25 +705,27 @@ export default function RequestsPage({ role = 'student' }) {
               My Reclamations
             </span>
           </button>
-          <button
-            onClick={() => setTeacherTab('inbox')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-150 ${
-              teacherTab === 'inbox'
-                ? 'bg-surface text-ink shadow-sm'
-                : 'text-ink-secondary hover:text-ink'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" />
-              </svg>
-              Student Inbox
-            </span>
-          </button>
+          {canAccessAdminInbox ? (
+            <button
+              onClick={() => setTeacherTab('inbox')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-150 ${
+                teacherTab === 'inbox'
+                  ? 'bg-surface text-ink shadow-sm'
+                  : 'text-ink-secondary hover:text-ink'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" />
+                </svg>
+                Student Inbox
+              </span>
+            </button>
+          ) : null}
         </div>
 
         {/* Tab Content */}
-        {teacherTab === 'inbox' ? (
+        {teacherTab === 'inbox' && canAccessAdminInbox ? (
           <AdminRequestsPage />
         ) : (
           <div className="space-y-6">

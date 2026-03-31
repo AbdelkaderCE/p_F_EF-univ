@@ -10,6 +10,7 @@
 */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /* ── Helpers ────────────────────────────────────────────────── */
 
@@ -81,6 +82,7 @@ function Section({ title, icon, children, action }) {
 /* ── Component ──────────────────────────────────────────────── */
 
 export default function CaseDetailPage({ caseData, onBack }) {
+  const navigate = useNavigate();
   const [showSanctionModal, setShowSanctionModal] = useState(false);
   const [showSummonsModal, setShowSummonsModal] = useState(false);
   const safeCaseData = {
@@ -282,7 +284,21 @@ export default function CaseDetailPage({ caseData, onBack }) {
                 <p className="text-xs text-ink-tertiary">{safeCaseData.studentId} · {safeCaseData.department}</p>
               </div>
             </div>
-            <button className="w-full px-3 py-2 text-xs font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-100 text-center">
+            <button
+              onClick={() => navigate('/dashboard/profile', {
+                state: {
+                  selectedStudentProfile: {
+                    name: safeCaseData.studentName,
+                    studentId: safeCaseData.studentId,
+                    department: safeCaseData.department,
+                    studentEtudiantId: safeCaseData.studentEtudiantId,
+                    studentUserId: safeCaseData.studentUserId,
+                    source: 'discipline-case',
+                  },
+                },
+              })}
+              className="w-full px-3 py-2 text-xs font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-100 text-center"
+            >
               View Student Profile
             </button>
           </div>

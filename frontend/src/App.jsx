@@ -89,6 +89,7 @@ function App() {
               <Route path="/dashboard/actualites" element={<ProtectedRoute><DashboardLayout><ActualitesPage /></DashboardLayout></ProtectedRoute>} />
               <Route path="/dashboard/ai" element={<ProtectedRoute><DashboardLayout><AIAssistantPage /></DashboardLayout></ProtectedRoute>} />
               <Route path="/dashboard/documents" element={<ProtectedRoute><DashboardLayout><DocumentsPage /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/dashboard/projects" element={<NotFoundPage />} />
               <Route path="/dashboard/notes" element={<ProtectedRoute><DashboardLayout><StudentNotesPage /></DashboardLayout></ProtectedRoute>} />
               <Route path="/dashboard/specialite-choice" element={<ProtectedRoute><DashboardLayout><StudentSpecialiteChoicePage /></DashboardLayout></ProtectedRoute>} />
               <Route path="/dashboard/calendar" element={<ProtectedRoute><DashboardLayout><CalendarPage /></DashboardLayout></ProtectedRoute>} />

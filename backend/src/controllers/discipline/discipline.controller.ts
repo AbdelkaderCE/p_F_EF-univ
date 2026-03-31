@@ -394,6 +394,68 @@ export const listDisciplineStudentsHandler = async (req: Request, res: Response)
   }
 };
 
+export const getDisciplineStudentProfileHandler = async (req: Request, res: Response) => {
+  try {
+    const etudiantId = Number(req.params.id);
+    if (!Number.isInteger(etudiantId) || etudiantId <= 0) {
+      res.status(400).json({ success: false, message: "Invalid student id" });
+      return;
+    }
+
+    const student = await prisma.etudiant.findUnique({
+      where: { id: etudiantId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+            telephone: true,
+            createdAt: true,
+            lastLogin: true,
+            status: true,
+            emailVerified: true,
+          },
+        },
+        promo: {
+          include: {
+            specialite: {
+              include: {
+                filiere: {
+                  include: {
+                    departement: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      res.status(404).json({ success: false, message: "Student not found" });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        etudiantId: student.id,
+        matricule: student.matricule,
+        moyenne: student.moyenne,
+        anneeInscription: student.anneeInscription,
+        user: student.user,
+        promo: student.promo,
+      },
+    });
+  } catch (error: any) {
+    logger.error("Error getting discipline student profile:", error);
+    res.status(500).json({ success: false, message: error?.message || "Failed to get student profile" });
+  }
+};
+
 export const updateDossierHandler = async (req: Request, res: Response) => {
   try {
     const id = parseInt(String(req.params.id), 10);

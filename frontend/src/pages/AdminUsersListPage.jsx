@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,7 +59,40 @@ export default function AdminUsersListPage() {
   const [excelFile, setExcelFile] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [logoBase64, setLogoBase64] = useState('');
   const excelInputRef = useRef(null);
+
+  // Load logo from multiple possible locations
+  useEffect(() => {
+    const loadLogo = async () => {
+      const logoPaths = [
+        '/Logo.png',
+        '/favicon.svg',
+        '/web-app-manifest-192x192.png',
+        '/web-app-manifest-512x512.png',
+        '/favicon.ico'
+      ];
+
+      for (const path of logoPaths) {
+        try {
+          const response = await fetch(path);
+          if (response.ok) {
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setLogoBase64(reader.result);
+            };
+            reader.readAsDataURL(blob);
+            break;
+          }
+        } catch (error) {
+          console.log(`Logo not found at ${path}`);
+        }
+      }
+    };
+    
+    loadLogo();
+  }, []);
 
   const exportCreatedCredentials = async (createdRows) => {
     try {
@@ -76,69 +109,256 @@ export default function AdminUsersListPage() {
           const roleText = (row.roleNames || []).map(roleLabel).join(', ');
           return `
             <tr>
-              <td>${index + 1}</td>
-              <td>${escapeHtml(fullName)}</td>
-              <td>${escapeHtml(row.email)}</td>
-              <td>${escapeHtml(row.telephone || '-')}</td>
-              <td>${escapeHtml(roleText || '-')}</td>
-              <td>${escapeHtml(row.tempPassword)}</td>
-              <td>${escapeHtml(formatFrDate(row.generatedAt))}</td>
+              <td style="border: 1px solid #000000; padding: 8px; text-align: center;">${index + 1}</td>
+              <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(fullName)}</td>
+              <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(row.email)}</td>
+              <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(row.telephone || '-')}</td>
+              <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(roleText || '-')}</td>
+              <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(row.tempPassword)}</td>
+              <td style="border: 1px solid #000000; padding: 8px; text-align: center;">${escapeHtml(formatFrDate(row.generatedAt))}</td>
             </tr>
           `;
         })
         .join('');
 
+      const logoHtml = logoBase64 
+        ? `<div style="text-align: center; margin: 20px 0;">
+            <img src="${logoBase64}" style="max-width: 120px; max-height: 120px; width: auto; height: auto;" />
+           </div>`
+        : '';
+
       const html = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <!DOCTYPE html>
+        <html>
           <head>
             <meta charset="utf-8" />
+            <title>Fiche de Création des Utilisateurs</title>
             <style>
-              body { font-family: Calibri, Arial, sans-serif; margin: 20px; color: #000; }
-              .header { text-align: center; }
-              .title { font-size: 20px; font-weight: bold; margin-top: 10px; }
-              .rule { border-top: 2px solid black; margin: 10px 0; }
-              table { border-collapse: collapse; width: 100%; margin-top: 10px; margin-bottom: 20px; }
-              th, td { border: 1px solid black; padding: 6px; font-size: 12px; text-align: center; }
-              th { background-color: #d9d9d9; font-weight: bold; }
-              .logo-note { text-align: center; font-size: 14px; font-weight: bold; margin: 20px 0; color: #666; }
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 20px;
+                }
+                .page-break {
+                  page-break-before: always;
+                }
+                table {
+                  page-break-inside: avoid;
+                }
+                tr {
+                  page-break-inside: avoid;
+                  page-break-after: auto;
+                }
+              }
+              
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              
+              body {
+                font-family: 'Arial', 'Calibri', sans-serif;
+                margin: 0;
+                padding: 20px;
+                color: #000000;
+                background: white;
+              }
+              
+              .document-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+              }
+              
+              .header {
+                text-align: center;
+                margin-bottom: 30px;
+                padding: 20px;
+              }
+              
+              .logo-container {
+                text-align: center;
+                margin: 20px 0;
+              }
+              
+              .logo-img {
+                max-width: 120px;
+                max-height: 120px;
+                width: auto;
+                height: auto;
+                display: inline-block;
+              }
+              
+              .arabic-text {
+                font-family: 'Traditional Arabic', 'Arial', sans-serif;
+                font-size: 16px;
+                margin: 10px 0;
+              }
+              
+              .title {
+                font-size: 20px;
+                font-weight: bold;
+                margin: 20px 0 10px 0;
+                text-align: center;
+              }
+              
+              .rule {
+                border-top: 2px solid #000000;
+                margin: 15px 0;
+              }
+              
+              .subtitle {
+                font-size: 16px;
+                font-weight: bold;
+                margin: 10px 0;
+              }
+              
+              .date-info {
+                text-align: right;
+                margin: 20px 0;
+                font-size: 12px;
+              }
+              
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+                font-size: 11px;
+              }
+              
+              th {
+                border: 1px solid #000000;
+                padding: 10px 8px;
+                background-color: #e8e8e8;
+                font-weight: bold;
+                text-align: center;
+                font-size: 12px;
+              }
+              
+              td {
+                border: 1px solid #000000;
+                padding: 8px;
+                vertical-align: top;
+              }
+              
+              .footer {
+                margin-top: 50px;
+                padding-top: 30px;
+              }
+              
+              .signatures-table {
+                width: 100%;
+                margin-top: 30px;
+                border: none;
+              }
+              
+              .signatures-table td {
+                border: none;
+                padding-top: 40px;
+                text-align: center;
+                vertical-align: bottom;
+              }
+              
+              .signature-line {
+                border-top: 1px solid #000000;
+                width: 200px;
+                margin-top: 10px;
+                padding-top: 5px;
+              }
+              
+              .stamp {
+                text-align: center;
+                margin-top: 30px;
+                font-style: italic;
+              }
+              
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 0.5cm;
+                }
+                .no-print {
+                  display: none;
+                }
+              }
             </style>
           </head>
           <body>
-            <div class="header">
-              <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
-              <h3>وزارة التعليم العالي و البحث العلمي</h3>
-              <div class="logo-note">[LOGO - University Ibn Khaldoun - Tiaret]</div>
-              <h2>Université Ibn Khaldoun - Tiaret</h2>
-              <p>Faculté : Faculté des Sciences et Technologies</p>
-              <p>Département : Département Informatique</p>
-              <div class="rule"></div>
-              <div class="title">FICHE OFFICIELLE DE CRÉATION DES UTILISATEURS</div>
-              <div class="rule"></div>
-              <p>Date : ${escapeHtml(dateLabel)}</p>
+            <div class="document-container">
+              <div class="header">
+                <div class="arabic-text">
+                  <strong>الجمهورية الجزائرية الديمقراطية الشعبية</strong><br/>
+                  <strong>وزارة التعليم العالي و البحث العلمي</strong>
+                </div>
+                
+                ${logoHtml}
+                
+                <div style="margin: 20px 0;">
+                  <strong>Université Ibn Khaldoun - Tiaret</strong><br/>
+                  Faculté des Mathématiques et Informatique<br/>
+                  Département Informatique
+                </div>
+                
+                <div class="rule"></div>
+                
+                <div class="title">
+                  FICHE DE CRÉATION DES UTILISATEURS
+                </div>
+                
+                <div class="rule"></div>
+                
+                <div class="date-info">
+                  Date : ${escapeHtml(dateLabel)}
+                </div>
+              </div>
+              
+              <table cellspacing="0" cellpadding="0">
+                <thead>
+                  <tr>
+                    <th style="width: 5%;">N°</th>
+                    <th style="width: 20%;">Nom et Prénom</th>
+                    <th style="width: 25%;">Email</th>
+                    <th style="width: 10%;">Téléphone</th>
+                    <th style="width: 15%;">Rôle</th>
+                    <th style="width: 15%;">Mot de passe</th>
+                    <th style="width: 10%;">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${renderedRows || '<tr><td colspan="7" style="text-align: center;">Aucune donnée</td></tr>'}
+                </tbody>
+              </table>
+              
+              <div class="footer">
+                <table class="signatures-table">
+                  <tr>
+                    <td style="width: 50%; text-align: center;">
+                      Signature de l'Utilisateur<br/>
+                      <div class="signature-line"></div>
+                    </td>
+                    <td style="width: 50%; text-align: center;">
+                      Signature de l'Administration<br/>
+                      <div class="signature-line"></div>
+                    </td>
+                  </tr>
+                </table>
+                
+                <div class="stamp">
+                  Cachet officiel de l'établissement
+                </div>
+              </div>
             </div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th>N°</th>
-                  <th>Nom et Prénom</th>
-                  <th>Email</th>
-                  <th>Téléphone</th>
-                  <th>Rôle</th>
-                  <th>Mot de passe</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${renderedRows || '<tr><td colspan="7">Aucune donnée</td></tr>'}
-              </tbody>
-            </table>
           </body>
         </html>
       `;
 
-      const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-      const fileName = `fiche_utilisateurs_liste_${today.toISOString().slice(0, 10)}.xls`;
+      // Create blob and download
+      const blob = new Blob([html], { 
+        type: 'application/vnd.ms-excel;charset=utf-8;' 
+      });
+      
+      const fileName = `fiche_utilisateurs_${today.toISOString().slice(0, 10)}.xls`;
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -147,6 +367,17 @@ export default function AdminUsersListPage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      // Also offer PDF print option
+      setTimeout(() => {
+        if (window.confirm('Do you want to open print dialog to save as PDF?')) {
+          const printWindow = window.open('', '_blank');
+          printWindow.document.write(html);
+          printWindow.document.close();
+          printWindow.print();
+        }
+      }, 500);
+      
     } catch (err) {
       console.error('Export error:', err);
       throw err;
@@ -253,16 +484,16 @@ export default function AdminUsersListPage() {
       if (createdRows.length > 0) {
         try {
           await exportCreatedCredentials(createdRows);
+          setMessage(`List created successfully. ${created} user(s) created. The Excel file has been downloaded and print dialog opened for PDF.`);
         } catch (exportErr) {
           console.error('Failed to export:', exportErr);
-          setError((prev) => `${prev} Warning: Excel export failed, but ${created} user(s) were created successfully.`);
+          setError((prev) => `${prev} Warning: Excel/PDF export failed, but ${created} user(s) were created successfully.`);
         }
       }
 
       if (failures.length) {
-        setError(`Created ${created}. Excel downloaded for successful rows. Failed ${failures.length}: ${failures.slice(0, 3).join(' | ')}`);
+        setError(`Created ${created}. Failed ${failures.length}: ${failures.slice(0, 3).join(' | ')}`);
       } else if (createdRows.length > 0) {
-        setMessage(`List created successfully. ${created} user(s) created and Excel downloaded automatically.`);
         setRows([emptyRow()]);
       }
     } finally {
@@ -302,7 +533,7 @@ export default function AdminUsersListPage() {
           `Excel processed: ${createdCount} created, ${failedCount} failed.${failurePreview ? ` ${failurePreview}` : ''}`
         );
       } else {
-        setMessage(`Excel imported successfully. ${createdCount} account(s) created.${createdRows.length ? ' Credentials Excel downloaded.' : ''}`);
+        setMessage(`Excel imported successfully. ${createdCount} account(s) created. The Excel file has been downloaded.`);
       }
 
       setExcelFile(null);

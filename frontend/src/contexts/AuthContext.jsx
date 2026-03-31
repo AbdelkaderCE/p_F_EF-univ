@@ -37,6 +37,17 @@ export function AuthProvider({ children }) {
     fetchUser();
   }, [fetchUser]);
 
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      fetchUser();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [fetchUser]);
+
   /* ── Login ────────────────────────────────────────────────── */
   const login = async (email, password) => {
     setError(null);

@@ -14,6 +14,12 @@ export interface AuthRequest extends Request {
   };
 }
 
+type UserRoleRecord = {
+  role?: {
+    nom: string | null;
+  } | null;
+};
+
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const token =
@@ -36,7 +42,24 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, nom: true, prenom: true, status: true, emailVerified: true, firstUse: true },
+      select: {
+        id: true,
+        email: true,
+        nom: true,
+        prenom: true,
+        status: true,
+        emailVerified: true,
+        firstUse: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                nom: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user || user.status !== "active") {
@@ -47,12 +70,16 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       return;
     }
 
+    const currentRoles = user.userRoles
+      .map((userRole: UserRoleRecord) => userRole.role?.nom)
+      .filter((roleName): roleName is string => Boolean(roleName));
+
     req.user = {
       id: user.id,
       email: user.email,
       nom: user.nom,
       prenom: user.prenom,
-      roles: payload.roles ?? [],
+      roles: currentRoles,
       firstUse: user.firstUse,
     };
 

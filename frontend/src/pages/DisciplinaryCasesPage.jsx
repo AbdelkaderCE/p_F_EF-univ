@@ -159,6 +159,8 @@ function normalizeCase(rawCase) {
   return {
     ...rawCase,
     rawId: typeof caseId === 'number' ? caseId : undefined,
+    studentEtudiantId: etudiant.id || rawCase.studentEtudiantId || null,
+    studentUserId: user.id || rawCase.studentUserId || null,
     id: normalizedId,
     status: statusMap[rawCase.status] || rawCase.status || 'pending',
     studentName: rawCase.studentName || [user.prenom, user.nom].filter(Boolean).join(' ').trim() || 'Unknown student',

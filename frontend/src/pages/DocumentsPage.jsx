@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import request from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const FALLBACK_DOCUMENTS = [
   { id: 'doc-1', name: 'Enrollment Certificate', category: 'Administrative', format: 'PDF', size: '180 KB', updatedAt: '2026-03-01' },
@@ -26,6 +27,9 @@ function mapCategory(value) {
 }
 
 export default function DocumentsPage() {
+  const { user } = useAuth();
+  const roleList = Array.isArray(user?.roles) ? user.roles.map((r) => String(r || '').toLowerCase()) : [];
+  const canUseStudentDocumentsApi = roleList.some((r) => ['etudiant', 'delegue', 'admin', 'vice_doyen'].includes(r));
   const [loading, setLoading] = useState(true);
   const [documents, setDocuments] = useState([]);
   const [query, setQuery] = useState('');
@@ -35,6 +39,11 @@ export default function DocumentsPage() {
 
     async function load() {
       try {
+        if (!canUseStudentDocumentsApi) {
+          setDocuments(FALLBACK_DOCUMENTS);
+          return;
+        }
+
         const res = await request('/api/v1/student/documents');
         if (!cancelled) {
           const rows = Array.isArray(res?.data) ? res.data : [];
@@ -61,7 +70,7 @@ export default function DocumentsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [canUseStudentDocumentsApi]);
 
   const filtered = useMemo(() => {
     const lower = query.trim().toLowerCase();

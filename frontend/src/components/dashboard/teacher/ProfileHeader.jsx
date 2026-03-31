@@ -1,15 +1,20 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function ProfileHeader({ profile }) {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   
   const defaultAvatar = "https://ui-avatars.com/api/?name=" + 
     (profile?.nom || 'Teacher') + "+" + (profile?.prenom || '');
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    navigate('/login', { replace: true });
   };
 
   return (

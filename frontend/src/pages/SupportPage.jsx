@@ -15,9 +15,9 @@ export default function SupportPage() {
         <article className="rounded-2xl border border-edge bg-surface p-5 shadow-card">
           <h2 className="text-base font-semibold text-ink">Contact Channels</h2>
           <ul className="mt-3 space-y-2 text-sm text-ink-secondary">
-            <li>Email: support.pfe@univ.dz</li>
-            <li>Phone: +213 46 00 00 00</li>
-            <li>Office: Bloc Administration, Bureau 12</li>
+            <li>Email: Mohamed.Said.Ghoulam@univ-tiaret.dz</li>
+            <li>Phone: +213551818688</li>
+            <li>Office: Zaaroura - Tiaret</li>
           </ul>
         </article>
 

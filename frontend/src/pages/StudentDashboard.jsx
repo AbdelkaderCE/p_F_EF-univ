@@ -102,7 +102,8 @@ export default function StudentDashboard({ role = 'student' }) {
   const [deadlines, setDeadlines] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const canUseStudentApis = role === 'student';
+  const roleList = Array.isArray(user?.roles) ? user.roles.map((r) => String(r || '').toLowerCase()) : [];
+  const canUseStudentApis = roleList.some((r) => ['etudiant', 'delegue'].includes(r));
 
   useEffect(() => {
     if (!canUseStudentApis) {

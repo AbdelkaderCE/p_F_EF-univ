@@ -73,6 +73,7 @@ export default function AdminUsersPage() {
   const [error, setError] = useState('');
   const [lastCreatedCredentials, setLastCreatedCredentials] = useState(null);
   const [credentialRegistry, setCredentialRegistry] = useState([]);
+  const [logoBase64, setLogoBase64] = useState('');
   const [formMeta, setFormMeta] = useState({
     universityName: 'Université Ibn Khaldoun - Tiaret',
     facultyName: 'Faculté des Sciences et Technologies',
@@ -133,6 +134,38 @@ export default function AdminUsersPage() {
       { label: 'Suspended', value: suspendedUsers, tone: 'text-danger' },
     ];
   }, [users]);
+
+  // Load default logo from public folder on component mount
+  useEffect(() => {
+    const loadDefaultLogo = async () => {
+      const logoPaths = [
+        '/Logo.png',
+        '/favicon.svg',
+        '/web-app-manifest-192x192.png',
+        '/web-app-manifest-512x512.png',
+        '/favicon.ico'
+      ];
+
+      for (const path of logoPaths) {
+        try {
+          const response = await fetch(path);
+          if (response.ok) {
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setLogoBase64(reader.result);
+            };
+            reader.readAsDataURL(blob);
+            break;
+          }
+        } catch (error) {
+          console.log(`Logo not found at ${path}`);
+        }
+      }
+    };
+    
+    loadDefaultLogo();
+  }, []);
 
   useEffect(() => {
     if (!lastCreatedCredentials) return undefined;
@@ -288,7 +321,6 @@ export default function AdminUsersPage() {
     }
   };
 
-
   const saveUserRoles = async (userId) => {
     const roleNames = editingRolesByUserId[userId] || [];
     if (!roleNames.length) {
@@ -398,60 +430,42 @@ export default function AdminUsersPage() {
     }
   };
 
-  const fileToDataUrl = (blob) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-
-  const getLogoBase64 = async () => {
-    try {
-      const response = await fetch('/Logo.png');
-      if (!response.ok) return '';
-      const blob = await response.blob();
-      return await fileToDataUrl(blob);
-    } catch {
-      return '';
-    }
-  };
-
   const buildOfficialRowsTable = (title, rows) => {
     const renderedRows = rows
       .map((row, index) => {
         const fullName = `${row.prenom || ''} ${row.nom || ''}`.trim();
-        const roleText = (row.roles || []).join(', ');
+        const roleText = (row.roles || []).map(roleLabel).join(', ');
 
         return `
           <tr>
-            <td>${index + 1}</td>
-            <td>${escapeHtml(fullName)}</td>
-            <td>${escapeHtml(row.email)}</td>
-            <td>${escapeHtml(row.telephone || '-')}</td>
-            <td>${escapeHtml(roleText || '-')}</td>
-            <td>${escapeHtml(row.tempPassword)}</td>
-            <td>${escapeHtml(formatFrDate(row.generatedAt || new Date().toISOString()))}</td>
+            <td style="border: 1px solid #000000; padding: 8px; text-align: center;">${index + 1}</td>
+            <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(fullName)}</td>
+            <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(row.email)}</td>
+            <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(row.telephone || '-')}</td>
+            <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(roleText || '-')}</td>
+            <td style="border: 1px solid #000000; padding: 8px;">${escapeHtml(row.tempPassword || 'N/A')}</td>
+            <td style="border: 1px solid #000000; padding: 8px; text-align: center;">${escapeHtml(formatFrDate(row.generatedAt || new Date().toISOString()))}</td>
           </tr>
         `;
       })
       .join('');
 
     return `
-      <h3>${escapeHtml(title)}</h3>
-      <table>
+      <h3 style="margin-top: 20px; margin-bottom: 10px;">${escapeHtml(title)}</h3>
+      <table style="border-collapse: collapse; width: 100%; margin-top: 10px; margin-bottom: 20px;">
         <thead>
-          <tr>
-            <th>N°</th>
-            <th>Nom et Prénom</th>
-            <th>Email</th>
-            <th>Téléphone</th>
-            <th>Rôle</th>
-            <th>Mot de passe</th>
-            <th>Date</th>
+          <tr style="background-color: #e8e8e8;">
+            <th style="border: 1px solid #000000; padding: 8px; text-align: center;">N°</th>
+            <th style="border: 1px solid #000000; padding: 8px;">Nom et Prénom</th>
+            <th style="border: 1px solid #000000; padding: 8px;">Email</th>
+            <th style="border: 1px solid #000000; padding: 8px;">Téléphone</th>
+            <th style="border: 1px solid #000000; padding: 8px;">Rôle</th>
+            <th style="border: 1px solid #000000; padding: 8px;">Mot de passe</th>
+            <th style="border: 1px solid #000000; padding: 8px;">Date</th>
           </tr>
         </thead>
         <tbody>
-          ${renderedRows || '<tr><td colspan="7">Aucune donnée</td></tr>'}
+          ${renderedRows || '<tr><td colspan="7" style="text-align: center;">Aucune donnée</td></tr>'}
         </tbody>
       </table>
     `;
@@ -466,13 +480,28 @@ export default function AdminUsersPage() {
       const usersResponse = await authAPI.adminGetUsers();
       const allUsers = usersResponse?.data || [];
       
-      // Filter to get students and teachers (prefer recently created ones)
-      const studentUsers = allUsers.filter((u) => (u.roles || []).includes('etudiant')).slice(-20);
-      const teacherUsers = allUsers.filter((u) => (u.roles || []).includes('enseignant')).slice(-20);
+      // Filter to get students and teachers
+      const studentUsers = allUsers.filter((u) => (u.roles || []).includes('etudiant'));
+      const teacherUsers = allUsers.filter((u) => (u.roles || []).includes('enseignant'));
       
-      // Use real data if available, otherwise use templates
-      const studentData = studentUsers.length > 0 ? studentUsers : Array(10).fill({ email: '', nom: '', prenom: '', telephone: '', roles: ['etudiant'] });
-      const teacherData = teacherUsers.length > 0 ? teacherUsers : Array(10).fill({ email: '', nom: '', prenom: '', telephone: '', roles: ['enseignant'] });
+      // Prepare data with credentials from registry if available
+      const studentData = studentUsers.map(user => {
+        const registryEntry = credentialRegistry.find(entry => entry.userId === user.id);
+        return {
+          ...user,
+          tempPassword: registryEntry?.tempPassword || '••••••••',
+          generatedAt: registryEntry?.generatedAt || user.createdAt || new Date().toISOString()
+        };
+      });
+      
+      const teacherData = teacherUsers.map(user => {
+        const registryEntry = credentialRegistry.find(entry => entry.userId === user.id);
+        return {
+          ...user,
+          tempPassword: registryEntry?.tempPassword || '••••••••',
+          generatedAt: registryEntry?.generatedAt || user.createdAt || new Date().toISOString()
+        };
+      });
 
       const today = new Date();
       const dateLabel = today.toLocaleDateString('fr-FR', {
@@ -481,103 +510,218 @@ export default function AdminUsersPage() {
         year: 'numeric',
       });
 
+      const logoHtml = logoBase64 
+        ? `<div style="text-align: center; margin: 20px 0;">
+            <img src="${logoBase64}" style="max-width: 120px; max-height: 120px; width: auto; height: auto;" />
+           </div>`
+        : '';
+
       const html = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <!DOCTYPE html>
+        <html>
           <head>
             <meta charset="utf-8" />
+            <title>Fiche de Création des Utilisateurs</title>
             <style>
-              body {
-                font-family: Calibri, Arial, sans-serif;
-                margin: 20px;
-                color: #000;
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 0.5cm;
+                }
+                .page-break {
+                  page-break-before: always;
+                }
+                table {
+                  page-break-inside: avoid;
+                }
+                tr {
+                  page-break-inside: avoid;
+                }
               }
-
+              
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              
+              body {
+                font-family: 'Arial', 'Calibri', sans-serif;
+                margin: 0;
+                padding: 20px;
+                color: #000000;
+                background: white;
+              }
+              
+              .document-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+              }
+              
               .header {
                 text-align: center;
+                margin-bottom: 30px;
+                padding: 20px;
               }
-
+              
+              .logo-container {
+                text-align: center;
+                margin: 20px 0;
+              }
+              
+              .logo-img {
+                max-width: 120px;
+                max-height: 120px;
+                width: auto;
+                height: auto;
+                display: inline-block;
+              }
+              
+              .arabic-text {
+                font-family: 'Traditional Arabic', 'Arial', sans-serif;
+                font-size: 16px;
+                margin: 10px 0;
+              }
+              
               .title {
                 font-size: 20px;
                 font-weight: bold;
-                margin-top: 10px;
-              }
-
-              .rule {
-                border-top: 2px solid black;
-                margin: 10px 0;
-              }
-
-              table {
-                border-collapse: collapse;
-                width: 100%;
-                margin-top: 10px;
-                margin-bottom: 20px;
-              }
-
-              th, td {
-                border: 1px solid black;
-                padding: 6px;
-                font-size: 12px;
+                margin: 20px 0 10px 0;
                 text-align: center;
-              }
-
-              th {
-                background-color: #d9d9d9;
-                font-weight: bold;
-              }
-
-              .footer {
-                margin-top: 30px;
-              }
-
-              .signatures td {
-                border: none;
-                padding-top: 40px;
               }
               
-              .logo-note {
-                text-align: center;
-                font-size: 14px;
+              .rule {
+                border-top: 2px solid #000000;
+                margin: 15px 0;
+              }
+              
+              .subtitle {
+                font-size: 16px;
                 font-weight: bold;
+                margin: 10px 0;
+              }
+              
+              .date-info {
+                text-align: right;
                 margin: 20px 0;
-                color: #666;
+                font-size: 12px;
+              }
+              
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+                font-size: 11px;
+              }
+              
+              th {
+                border: 1px solid #000000;
+                padding: 10px 8px;
+                background-color: #e8e8e8;
+                font-weight: bold;
+                text-align: center;
+                font-size: 12px;
+              }
+              
+              td {
+                border: 1px solid #000000;
+                padding: 8px;
+                vertical-align: top;
+              }
+              
+              .footer {
+                margin-top: 50px;
+                padding-top: 30px;
+              }
+              
+              .signatures-table {
+                width: 100%;
+                margin-top: 30px;
+                border: none;
+              }
+              
+              .signatures-table td {
+                border: none;
+                padding-top: 40px;
+                text-align: center;
+                vertical-align: bottom;
+              }
+              
+              .signature-line {
+                border-top: 1px solid #000000;
+                width: 200px;
+                margin-top: 10px;
+                padding-top: 5px;
+              }
+              
+              .stamp {
+                text-align: center;
+                margin-top: 30px;
+                font-style: italic;
+              }
+              
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 0.5cm;
+                }
+                .no-print {
+                  display: none;
+                }
               }
             </style>
           </head>
           <body>
-            <div class="header">
-              <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
-              <h3>وزارة التعليم العالي و البحث العلمي</h3>
-
-              <div class="logo-note">[LOGO - University Ibn Khaldoun - Tiaret]</div>
-
-              <h2>${escapeHtml(formMeta.universityName)}</h2>
-              <p>Faculté : ${escapeHtml(formMeta.facultyName)}</p>
-              <p>Département : ${escapeHtml(formMeta.departmentName)}</p>
-
-              <div class="rule"></div>
-
-              <div class="title">FICHE OFFICIELLE DE CRÉATION DES UTILISATEURS</div>
-
-              <div class="rule"></div>
-
-              <p>Date : ${escapeHtml(dateLabel)}</p>
-            </div>
-
-            ${buildOfficialRowsTable('Liste des Étudiants', studentData)}
-            ${buildOfficialRowsTable('Liste des Enseignants', teacherData)}
-
-            <div class="footer">
-              <table class="signatures" width="100%">
-                <tr>
-                  <td>Signature de l'Utilisateur</td>
-                  <td>Signature de l'Administration</td>
-                </tr>
-              </table>
-
-              <p style="text-align:center; margin-top:20px;">
-                Cachet officiel de l'établissement
-              </p>
+            <div class="document-container">
+              <div class="header">
+                <div class="arabic-text">
+                  <strong>الجمهورية الجزائرية الديمقراطية الشعبية</strong><br/>
+                  <strong>وزارة التعليم العالي و البحث العلمي</strong>
+                </div>
+                
+                ${logoHtml}
+                
+                <div style="margin: 20px 0;">
+                  <strong>${escapeHtml(formMeta.universityName)}</strong><br/>
+                  Faculté : ${escapeHtml(formMeta.facultyName)}<br/>
+                  Département : ${escapeHtml(formMeta.departmentName)}
+                </div>
+                
+                <div class="rule"></div>
+                
+                <div class="title">
+                  FICHE DE CRÉATION DES UTILISATEURS
+                </div>
+                
+                <div class="rule"></div>
+                
+                <div class="date-info">
+                  Date : ${escapeHtml(dateLabel)}
+                </div>
+              </div>
+              
+              ${studentData.length > 0 ? buildOfficialRowsTable('Liste des Étudiants', studentData) : '<p>Aucun étudiant trouvé</p>'}
+              ${teacherData.length > 0 ? buildOfficialRowsTable('Liste des Enseignants', teacherData) : '<p>Aucun enseignant trouvé</p>'}
+              
+              <div class="footer">
+                <table class="signatures-table">
+                  <tr>
+                    <td style="width: 50%; text-align: center;">
+                      Signature de l'Utilisateur<br/>
+                      <div class="signature-line"></div>
+                    </td>
+                    <td style="width: 50%; text-align: center;">
+                      Signature de l'Administration<br/>
+                      <div class="signature-line"></div>
+                    </td>
+                  </tr>
+                </table>
+                
+                <div class="stamp">
+                  Cachet officiel de l'établissement
+                </div>
+              </div>
             </div>
           </body>
         </html>
@@ -597,7 +741,17 @@ export default function AdminUsersPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      setMessage('✅ Excel exported successfully with official format.');
+      // Offer print dialog for PDF
+      setTimeout(() => {
+        if (window.confirm('Do you want to open print dialog to save as PDF?')) {
+          const printWindow = window.open('', '_blank');
+          printWindow.document.write(html);
+          printWindow.document.close();
+          printWindow.print();
+        }
+      }, 500);
+
+      setMessage('Excel exported successfully with logo and official format.');
     } catch (err) {
       console.error('Export error:', err);
       setError(`Export failed: ${err.message}`);
@@ -706,6 +860,7 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
+      {/* Rest of the component remains the same */}
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
         <div className={`${sectionClassName} p-6`}>
           <div className="flex flex-col gap-2 border-b border-edge-subtle pb-5 sm:flex-row sm:items-end sm:justify-between">

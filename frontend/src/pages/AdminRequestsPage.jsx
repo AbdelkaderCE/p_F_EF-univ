@@ -11,6 +11,7 @@
 */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import request from '../services/api';
 
 /* ── Status Config ──────────────────────────────────────────── */
@@ -94,6 +95,7 @@ function FileIcon({ type }) {
    ════════════════════════════════════════════════════════════════ */
 
 export default function AdminRequestsPage() {
+  const navigate = useNavigate();
   const [inbox, setInbox] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -472,7 +474,19 @@ export default function AdminRequestsPage() {
                   <p className="text-xs text-ink-tertiary">{req.studentId} · {req.department}</p>
                 </div>
               </div>
-              <button className="w-full px-3 py-2 text-xs font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-100 text-center">
+              <button
+                onClick={() => navigate('/dashboard/profile', {
+                  state: {
+                    selectedStudentProfile: {
+                      name: req.studentName,
+                      studentId: req.studentId,
+                      department: req.department,
+                      source: 'requests-admin',
+                    },
+                  },
+                })}
+                className="w-full px-3 py-2 text-xs font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-100 text-center"
+              >
                 View Student Profile
               </button>
             </div>

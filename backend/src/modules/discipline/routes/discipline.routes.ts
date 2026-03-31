@@ -8,6 +8,7 @@ import {
   deleteDossierHandler,
   finaliserConseilHandler,
   getConseilHandler,
+  getDisciplineStudentProfileHandler,
   getDossierHandler,
   listDisciplineStudentsHandler,
   listConseilsHandler,
@@ -49,6 +50,7 @@ router.delete("/cases/:id", requireAuth, requireRole(disciplineRoles), deleteDos
 router.get("/infractions", requireAuth, requireRole(disciplineRoles), listInfractionsHandler);
 router.get("/decisions", requireAuth, requireRole(disciplineRoles), listDecisionsHandler);
 router.get("/students", requireAuth, requireRole(disciplineRoles), listDisciplineStudentsHandler);
+router.get("/students/:id/profile", requireAuth, requireRole(disciplineRoles), getDisciplineStudentProfileHandler);
 
 router.post("/meetings", requireAuth, requireRole(disciplineRoles), scheduleMeetingHandler);
 router.get("/meetings", requireAuth, requireRole(disciplineRoles), listConseilsHandler);
