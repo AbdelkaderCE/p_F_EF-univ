@@ -78,7 +78,6 @@ export default function AdminUsersListPage() {
 
   const exportCreatedCredentials = async (createdRows) => {
     try {
-      const logoDataUrl = await getLogoBase64();
       const today = new Date();
       const dateLabel = today.toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -116,15 +115,14 @@ export default function AdminUsersListPage() {
               table { border-collapse: collapse; width: 100%; margin-top: 10px; margin-bottom: 20px; }
               th, td { border: 1px solid black; padding: 6px; font-size: 12px; text-align: center; }
               th { background-color: #d9d9d9; font-weight: bold; }
-              .logo-container { text-align: center; margin-bottom: 20px; }
-              .logo-img { max-width: 100px; max-height: 100px; }
+              .logo-note { text-align: center; font-size: 14px; font-weight: bold; margin: 20px 0; color: #666; }
             </style>
           </head>
           <body>
             <div class="header">
               <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
               <h3>وزارة التعليم العالي و البحث العلمي</h3>
-              ${logoDataUrl ? `<div class="logo-container"><img src="${logoDataUrl}" class="logo-img" /></div>` : ''}
+              <div class="logo-note">[LOGO - University Ibn Khaldoun - Tiaret]</div>
               <h2>Université Ibn Khaldoun - Tiaret</h2>
               <p>Faculté : Faculté des Sciences et Technologies</p>
               <p>Département : Département Informatique</p>
