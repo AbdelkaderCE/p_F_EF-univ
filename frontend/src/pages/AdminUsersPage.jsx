@@ -461,138 +461,147 @@ export default function AdminUsersPage() {
     setError('');
     setMessage('');
 
-    if (studentCredentialRows.length === 0 && teacherCredentialRows.length === 0) {
-      setError('No data to export.');
-      return;
+    try {
+      // Fetch real created users from API
+      const usersResponse = await authAPI.adminGetUsers();
+      const allUsers = usersResponse?.data || [];
+      
+      // Filter to get students and teachers (prefer recently created ones)
+      const studentUsers = allUsers.filter((u) => (u.roles || []).includes('etudiant')).slice(-20);
+      const teacherUsers = allUsers.filter((u) => (u.roles || []).includes('enseignant')).slice(-20);
+      
+      // Use real data if available, otherwise use templates
+      const studentData = studentUsers.length > 0 ? studentUsers : Array(10).fill({ email: '', nom: '', prenom: '', telephone: '', roles: ['etudiant'] });
+      const teacherData = teacherUsers.length > 0 ? teacherUsers : Array(10).fill({ email: '', nom: '', prenom: '', telephone: '', roles: ['enseignant'] });
+
+      const today = new Date();
+      const dateLabel = today.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      });
+
+      const html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+          <head>
+            <meta charset="utf-8" />
+            <style>
+              body {
+                font-family: Calibri, Arial, sans-serif;
+                margin: 20px;
+                color: #000;
+              }
+
+              .header {
+                text-align: center;
+              }
+
+              .title {
+                font-size: 20px;
+                font-weight: bold;
+                margin-top: 10px;
+              }
+
+              .rule {
+                border-top: 2px solid black;
+                margin: 10px 0;
+              }
+
+              table {
+                border-collapse: collapse;
+                width: 100%;
+                margin-top: 10px;
+                margin-bottom: 20px;
+              }
+
+              th, td {
+                border: 1px solid black;
+                padding: 6px;
+                font-size: 12px;
+                text-align: center;
+              }
+
+              th {
+                background-color: #d9d9d9;
+                font-weight: bold;
+              }
+
+              .footer {
+                margin-top: 30px;
+              }
+
+              .signatures td {
+                border: none;
+                padding-top: 40px;
+              }
+              
+              .logo-note {
+                text-align: center;
+                font-size: 14px;
+                font-weight: bold;
+                margin: 20px 0;
+                color: #666;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
+              <h3>وزارة التعليم العالي و البحث العلمي</h3>
+
+              <div class="logo-note">[LOGO - University Ibn Khaldoun - Tiaret]</div>
+
+              <h2>${escapeHtml(formMeta.universityName)}</h2>
+              <p>Faculté : ${escapeHtml(formMeta.facultyName)}</p>
+              <p>Département : ${escapeHtml(formMeta.departmentName)}</p>
+
+              <div class="rule"></div>
+
+              <div class="title">FICHE OFFICIELLE DE CRÉATION DES UTILISATEURS</div>
+
+              <div class="rule"></div>
+
+              <p>Date : ${escapeHtml(dateLabel)}</p>
+            </div>
+
+            ${buildOfficialRowsTable('Liste des Étudiants', studentData)}
+            ${buildOfficialRowsTable('Liste des Enseignants', teacherData)}
+
+            <div class="footer">
+              <table class="signatures" width="100%">
+                <tr>
+                  <td>Signature de l'Utilisateur</td>
+                  <td>Signature de l'Administration</td>
+                </tr>
+              </table>
+
+              <p style="text-align:center; margin-top:20px;">
+                Cachet officiel de l'établissement
+              </p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const blob = new Blob([html], {
+        type: 'application/vnd.ms-excel;charset=utf-8;',
+      });
+
+      const fileName = `fiche_utilisateurs_${today.toISOString().slice(0, 10)}.xls`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setMessage('✅ Excel exported successfully with official format.');
+    } catch (err) {
+      console.error('Export error:', err);
+      setError(`Export failed: ${err.message}`);
     }
-
-    const logoDataUrl = await getLogoBase64();
-    const today = new Date();
-    const dateLabel = today.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-
-    const html = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-          <meta charset="utf-8" />
-          <style>
-            body {
-              font-family: Calibri, Arial, sans-serif;
-              margin: 20px;
-              color: #000;
-            }
-
-            .header {
-              text-align: center;
-            }
-
-            .title {
-              font-size: 20px;
-              font-weight: bold;
-              margin-top: 10px;
-            }
-
-            .rule {
-              border-top: 2px solid black;
-              margin: 10px 0;
-            }
-
-            table {
-              border-collapse: collapse;
-              width: 100%;
-              margin-top: 10px;
-              margin-bottom: 20px;
-            }
-
-            th, td {
-              border: 1px solid black;
-              padding: 6px;
-              font-size: 12px;
-              text-align: center;
-            }
-
-            th {
-              background-color: #d9d9d9;
-              font-weight: bold;
-            }
-
-            .footer {
-              margin-top: 30px;
-            }
-
-            .signatures td {
-              border: none;
-              padding-top: 40px;
-            }
-            
-            .logo-container {
-              text-align: center;
-              margin-bottom: 20px;
-            }
-            
-            .logo-img {
-              max-width: 100px;
-              max-height: 100px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
-            <h3>وزارة التعليم العالي و البحث العلمي</h3>
-
-            ${logoDataUrl ? `<div class="logo-container"><img src="${logoDataUrl}" class="logo-img" /></div>` : ''}
-
-            <h2>${escapeHtml(formMeta.universityName)}</h2>
-            <p>Faculté : ${escapeHtml(formMeta.facultyName)}</p>
-            <p>Département : ${escapeHtml(formMeta.departmentName)}</p>
-
-            <div class="rule"></div>
-
-            <div class="title">FICHE OFFICIELLE DE CRÉATION DES UTILISATEURS</div>
-
-            <div class="rule"></div>
-
-            <p>Date : ${escapeHtml(dateLabel)}</p>
-          </div>
-
-          ${studentCredentialRows.length > 0 ? buildOfficialRowsTable('Liste des Étudiants', studentCredentialRows) : ''}
-          ${teacherCredentialRows.length > 0 ? buildOfficialRowsTable('Liste des Enseignants', teacherCredentialRows) : ''}
-
-          <div class="footer">
-            <table class="signatures" width="100%">
-              <tr>
-                <td>Signature de l'Utilisateur</td>
-                <td>Signature de l'Administration</td>
-              </tr>
-            </table>
-
-            <p style="text-align:center; margin-top:20px;">
-              Cachet officiel de l'établissement
-            </p>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const blob = new Blob([html], {
-      type: 'application/vnd.ms-excel;charset=utf-8;',
-    });
-
-    const fileName = `fiche_utilisateurs_${today.toISOString().slice(0, 10)}.xls`;
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    setMessage('✅ Excel exported successfully with logo and official format.');
   };
 
   if (authLoading || loading) {
