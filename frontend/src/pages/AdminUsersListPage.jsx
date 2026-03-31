@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -55,26 +55,11 @@ export default function AdminUsersListPage() {
 
   const [rows, setRows] = useState([emptyRow()]);
   const [loading, setLoading] = useState(false);
+  const [importingExcel, setImportingExcel] = useState(false);
+  const [excelFile, setExcelFile] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-
-  const fileToDataUrl = (blob) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-
-  const getLogoBase64 = async () => {
-    try {
-      const response = await fetch('/Logo.png');
-      if (!response.ok) return '';
-      const blob = await response.blob();
-      return await fileToDataUrl(blob);
-    } catch {
-      return '';
-    }
-  };
+  const excelInputRef = useRef(null);
 
   const exportCreatedCredentials = async (createdRows) => {
     try {
@@ -285,6 +270,52 @@ export default function AdminUsersListPage() {
     }
   };
 
+  const handleExcelImport = async () => {
+    setError('');
+    setMessage('');
+
+    if (!excelFile) {
+      setError('Please select an Excel file (.xlsx or .xls).');
+      return;
+    }
+
+    setImportingExcel(true);
+    try {
+      const response = await authAPI.adminImportUsersExcel(excelFile);
+      const data = response?.data || {};
+      const createdRows = Array.isArray(data.created) ? data.created : [];
+      const failures = Array.isArray(data.failures) ? data.failures : [];
+
+      if (createdRows.length > 0) {
+        await exportCreatedCredentials(createdRows);
+      }
+
+      const createdCount = Number(data.createdCount || 0);
+      const failedCount = Number(data.failedCount || 0);
+
+      if (failedCount > 0) {
+        const failurePreview = failures
+          .slice(0, 3)
+          .map((item) => `row ${item.rowNumber}: ${item.reason}`)
+          .join(' | ');
+        setError(
+          `Excel processed: ${createdCount} created, ${failedCount} failed.${failurePreview ? ` ${failurePreview}` : ''}`
+        );
+      } else {
+        setMessage(`Excel imported successfully. ${createdCount} account(s) created.${createdRows.length ? ' Credentials Excel downloaded.' : ''}`);
+      }
+
+      setExcelFile(null);
+      if (excelInputRef.current) {
+        excelInputRef.current.value = '';
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to import users from Excel.');
+    } finally {
+      setImportingExcel(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="rounded-2xl border border-edge bg-surface p-8 shadow-card">
@@ -326,6 +357,36 @@ export default function AdminUsersListPage() {
 
       {message ? <div className="rounded-2xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success shadow-card">{message}</div> : null}
       {error ? <div className="rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger shadow-card">{error}</div> : null}
+
+      <section className="rounded-2xl border border-edge bg-surface shadow-card p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-ink">Import from Excel</h2>
+          <p className="mt-1 text-sm text-ink-secondary">
+            Upload a spreadsheet to create multiple accounts at once. Required columns: <span className="font-medium">nom, prenom, email, roles</span>.
+          </p>
+          <p className="mt-1 text-xs text-ink-tertiary">
+            Optional columns: telephone, promoId, specialiteId, moduleIds (comma-separated), anneeUniversitaire.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            ref={excelInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={(event) => setExcelFile(event.target.files?.[0] || null)}
+            className="block w-full rounded-xl border border-edge bg-canvas px-3 py-2 text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-brand/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand hover:file:bg-brand/15"
+          />
+          <button
+            type="button"
+            onClick={handleExcelImport}
+            disabled={importingExcel}
+            className="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover disabled:opacity-60"
+          >
+            {importingExcel ? 'Importing...' : 'Import Excel'}
+          </button>
+        </div>
+      </section>
 
       <form onSubmit={submitList} className="rounded-2xl border border-edge bg-surface shadow-card p-6 space-y-4">
         <div className="overflow-x-auto">

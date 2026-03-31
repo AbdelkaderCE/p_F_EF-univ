@@ -185,6 +185,35 @@ curl -X POST http://localhost:5000/api/v1/auth/login -H "Content-Type: applicati
 
 Should return a success response with user data.
 
+### Admin bulk user import (Excel)
+
+Admins and vice deans can import users from an Excel file:
+
+- **Endpoint:** `POST /api/v1/auth/admin/import-users-excel`
+- **Auth:** required (`admin` or `vice_doyen` role)
+- **Content-Type:** `multipart/form-data` with a `file` field (`.xlsx` or `.xls`)
+
+Required columns in the first sheet:
+
+- `nom`
+- `prenom`
+- `email`
+- `roles` (comma-separated if multiple; creation supports one base role: `admin`, `enseignant`, or `etudiant`)
+
+Optional columns:
+
+- `telephone`
+- `promoId`
+- `specialiteId`
+- `moduleIds` (comma-separated ids)
+- `anneeUniversitaire`
+
+The endpoint returns row-level results with:
+
+- `createdCount`, `failedCount`
+- `created[]` (includes generated temporary password)
+- `failures[]` (row number + reason)
+
 ---
 
 ## 📋 Test Accounts (after seeding)

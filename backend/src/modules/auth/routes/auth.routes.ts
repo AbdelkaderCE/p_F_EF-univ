@@ -1,4 +1,6 @@
 import { Router } from "express";
+import multer from "multer";
+import path from "path";
 import {
   register,
   login,
@@ -9,6 +11,7 @@ import {
   getMeHandler,
   changePasswordHandler,
   createUserByAdminHandler,
+  importUsersByAdminExcelHandler,
   adminResetPasswordHandler,
   listAdminUsersHandler,
   listRolesHandler,
@@ -32,6 +35,21 @@ import {
 import { requireAuth, requireRole } from "../../../middlewares/auth.middleware";
 
 const router = Router();
+
+const excelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+  fileFilter: (_req, file, cb) => {
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    if ([".xlsx", ".xls"].includes(extension)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Only Excel files (.xlsx, .xls) are allowed"));
+  },
+});
 
 // ==================== PUBLIC ROUTES ====================
 router.post("/register", registerLimiter, register);
@@ -59,6 +77,14 @@ router.post(
   requireAuth,
   requireRole(["admin", "vice_doyen"]),
   createUserByAdminHandler
+);
+
+router.post(
+  "/admin/import-users-excel",
+  requireAuth,
+  requireRole(["admin", "vice_doyen"]),
+  excelUpload.single("file"),
+  importUsersByAdminExcelHandler
 );
 
 // Reset password - requires 'users:edit' permission
