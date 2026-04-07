@@ -20,6 +20,18 @@ export default function AIAssistantPage() {
 
   const emptyState = useMemo(() => history.length === 0, [history.length]);
 
+  const normalizeAssistantText = (text) =>
+    String(text || '')
+      .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      .replace(/^\s*[-*]\s+/gm, '• ')
+      .replace(/`{1,3}/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
   const sendPrompt = async (text) => {
     const content = text.trim();
     if (!content || isTyping) return;
@@ -43,7 +55,7 @@ export default function AIAssistantPage() {
         ...prev,
         {
           role: 'assistant',
-          content: response?.data?.reply || 'No response returned from AI service.',
+          content: normalizeAssistantText(response?.data?.reply || 'No response returned from AI service.'),
         },
       ]);
     } catch (error) {
