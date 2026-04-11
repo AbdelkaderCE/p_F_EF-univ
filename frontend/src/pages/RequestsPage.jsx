@@ -118,10 +118,10 @@ function normalizeJustification(item) {
 
 const STATUS_CONFIG = {
   draft:          { label: 'Draft',        bg: 'bg-surface-200',                        text: 'text-ink-tertiary', border: 'border-edge',                               dot: 'bg-ink-muted'  },
-  submitted:      { label: 'Submitted',    bg: 'bg-blue-50 dark:bg-blue-950/40',        text: 'text-brand',        border: 'border-blue-200 dark:border-blue-800/50',   dot: 'bg-brand'      },
-  'under-review': { label: 'Under Review', bg: 'bg-amber-50 dark:bg-amber-950/40',      text: 'text-warning',      border: 'border-amber-200 dark:border-amber-800/50', dot: 'bg-warning'    },
-  resolved:       { label: 'Resolved',     bg: 'bg-green-50 dark:bg-green-950/40',      text: 'text-success',      border: 'border-green-200 dark:border-green-800/50', dot: 'bg-success'    },
-  rejected:       { label: 'Rejected',     bg: 'bg-red-50 dark:bg-red-950/40',          text: 'text-danger',       border: 'border-red-200 dark:border-red-800/50',     dot: 'bg-danger'     },
+  submitted:      { label: 'Submitted',    bg: 'bg-brand-light',                         text: 'text-brand',        border: 'border-brand/30',                           dot: 'bg-brand'      },
+  'under-review': { label: 'Under Review', bg: 'bg-warning/10',                          text: 'text-warning',      border: 'border-warning/30',                         dot: 'bg-warning'    },
+  resolved:       { label: 'Resolved',     bg: 'bg-success/10',                          text: 'text-success',      border: 'border-success/30',                         dot: 'bg-success'    },
+  rejected:       { label: 'Rejected',     bg: 'bg-danger/10',                           text: 'text-danger',       border: 'border-danger/30',                          dot: 'bg-danger'     },
 };
 
 /* ── Type Options ───────────────────────────────────────────── */
@@ -150,7 +150,7 @@ const JUSTIFICATION_TYPES = [
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.submitted;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${cfg.bg} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -184,19 +184,21 @@ function StatusTracker({ status }) {
 
 function StatCard({ label, value, accent, icon }) {
   const accents = {
-    brand:   'bg-blue-50 dark:bg-blue-950/40 text-brand border-blue-200 dark:border-blue-800/50',
-    warning: 'bg-amber-50 dark:bg-amber-950/40 text-warning border-amber-200 dark:border-amber-800/50',
-    success: 'bg-green-50 dark:bg-green-950/40 text-success border-green-200 dark:border-green-800/50',
-    danger:  'bg-red-50 dark:bg-red-950/40 text-danger border-red-200 dark:border-red-800/50',
-    emerald: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
+    brand:   'bg-brand-light text-brand',
+    warning: 'bg-warning/10 text-warning',
+    success: 'bg-success/10 text-success',
+    danger:  'bg-danger/10 text-danger',
+    emerald: 'bg-success/10 text-success',
   };
   return (
-    <div className={`rounded-lg border p-4 ${accents[accent] || accents.brand}`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="opacity-60">{icon}</span>
-        <span className="text-2xl font-bold">{value}</span>
+    <div className="rounded-lg border border-edge bg-surface p-5 shadow-card flex items-center gap-4">
+      <div className={`w-10 h-10 rounded-lg ${accents[accent] || accents.brand} flex items-center justify-center shrink-0`}>
+        {icon}
       </div>
-      <p className="text-xs font-medium opacity-80">{label}</p>
+      <div>
+        <p className="text-2xl font-bold text-ink tracking-tight">{value}</p>
+        <p className="text-xs text-ink-tertiary mt-0.5">{label}</p>
+      </div>
     </div>
   );
 }
@@ -221,7 +223,7 @@ function FileIcon({ type }) {
 function CategoryBadge({ category }) {
   if (category === 'reclamation') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50">
+      <span className="inline-flex items-center gap-1 rounded-md bg-brand-light px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand">
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
         </svg>
@@ -230,7 +232,7 @@ function CategoryBadge({ category }) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+    <span className="inline-flex items-center gap-1 rounded-md bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success">
       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
       </svg>
@@ -274,8 +276,8 @@ function FileUploadZone({ files, setFiles, dragActive, setDragActive, fileInputR
   };
 
   const borderActive = accentColor === 'emerald'
-    ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30'
-    : 'border-brand bg-blue-50/50 dark:bg-blue-950/30';
+    ? 'border-success/40 bg-success/10'
+    : 'border-brand/40 bg-brand-light';
 
   return (
     <div>
@@ -633,15 +635,15 @@ export default function RequestsPage({ role = 'student' }) {
         </div>
 
         {authRequired && (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+          <div className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
             You are not authenticated. Please sign in to submit or view requests.
           </div>
         )}
 
         {/* Info banner */}
-        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg px-5 py-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand-light px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-surface">
               <svg className="w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
@@ -651,7 +653,7 @@ export default function RequestsPage({ role = 'student' }) {
               <p className="text-xs text-ink-tertiary">Sign in to view submission history and receive status updates.</p>
             </div>
           </div>
-          <a href="/login" className="px-4 py-2 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover transition-colors duration-150 shadow-sm whitespace-nowrap">
+          <a href="/login" className="whitespace-nowrap rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand/30 focus:ring-offset-2">
             Sign In
           </a>
         </div>
@@ -922,7 +924,7 @@ export default function RequestsPage({ role = 'student' }) {
           </button>
           <button
             onClick={() => { setView('new-justification'); resetJusForm(); }}
-            className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 active:bg-emerald-800 transition-all duration-150 flex items-center gap-2 shadow-sm"
+            className="px-4 py-2 text-sm font-medium text-white bg-success rounded-md hover:opacity-90 active:opacity-80 transition-all duration-150 flex items-center gap-2 shadow-soft"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -948,7 +950,7 @@ export default function RequestsPage({ role = 'student' }) {
           Reclamations
           <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
             activeCategory === 'reclamations'
-              ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+              ? 'bg-brand-light text-brand'
               : 'bg-surface-300 text-ink-muted'
           }`}>
             {reclamations.length}
@@ -968,7 +970,7 @@ export default function RequestsPage({ role = 'student' }) {
           Justifications
           <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
             activeCategory === 'justifications'
-              ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+              ? 'bg-success/10 text-success'
               : 'bg-surface-300 text-ink-muted'
           }`}>
             {justifications.length}
@@ -1186,7 +1188,7 @@ export default function RequestsPage({ role = 'student' }) {
     return (
       <div className="bg-surface rounded-lg border border-edge shadow-card">
         <div className="px-6 py-4 border-b border-edge-subtle flex items-center gap-2">
-          <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
           </svg>
           <h2 className="text-base font-semibold text-ink">Justification Details</h2>
@@ -1204,7 +1206,7 @@ export default function RequestsPage({ role = 'student' }) {
                 value={jusNom}
                 onChange={(e) => setJusNom(e.target.value)}
                 placeholder="Zerhouni"
-                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
+                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150"
               />
             </div>
             <div>
@@ -1216,7 +1218,7 @@ export default function RequestsPage({ role = 'student' }) {
                 value={jusPrenom}
                 onChange={(e) => setJusPrenom(e.target.value)}
                 placeholder="Fatima"
-                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
+                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150"
               />
             </div>
             <div>
@@ -1228,7 +1230,7 @@ export default function RequestsPage({ role = 'student' }) {
                 value={jusEmail}
                 onChange={(e) => setJusEmail(e.target.value)}
                 placeholder="f.zerhouni@univ-tiaret.dz"
-                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
+                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150"
               />
             </div>
           </div>
@@ -1243,7 +1245,7 @@ export default function RequestsPage({ role = 'student' }) {
               value={jusTitle}
               onChange={(e) => setJusTitle(e.target.value)}
               placeholder="e.g., Absence justification — Medical emergency 17–19 Feb"
-              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150"
             />
           </div>
 
@@ -1255,7 +1257,7 @@ export default function RequestsPage({ role = 'student' }) {
             <select
               value={jusType}
               onChange={(e) => setJusType(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150"
             >
               {justificationTypes.length > 0 ? (
                 <>
@@ -1280,7 +1282,7 @@ export default function RequestsPage({ role = 'student' }) {
               type="date"
               value={jusDateAbsence}
               onChange={(e) => setJusDateAbsence(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150"
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150"
             />
           </div>
 
@@ -1294,7 +1296,7 @@ export default function RequestsPage({ role = 'student' }) {
               value={jusDescription}
               onChange={(e) => setJusDescription(e.target.value)}
               placeholder="Explain the reason for your absence, including exact dates and any medical or administrative circumstances…"
-              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none transition-colors duration-150 resize-none"
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none transition-colors duration-150 resize-none"
             />
             <p className="text-xs text-ink-muted mt-1">Include the exact dates of absence and the reason.</p>
           </div>
@@ -1320,7 +1322,7 @@ export default function RequestsPage({ role = 'student' }) {
               aria-checked={emailNotify}
               onClick={() => setEmailNotify(!emailNotify)}
               className={`shrink-0 relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-150 ${
-                emailNotify ? 'bg-emerald-600' : 'bg-surface-300'
+                emailNotify ? 'bg-success' : 'bg-surface-300'
               }`}
             >
               <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-150 ${
@@ -1348,7 +1350,7 @@ export default function RequestsPage({ role = 'student' }) {
             <button
               onClick={submitJustification}
               disabled={authRequired || submitLoading || !jusTitle || !jusType || !jusDescription || !jusNom || !jusPrenom || !jusEmail || !jusDateAbsence}
-              className="px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 active:bg-emerald-800 transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="px-4 py-2.5 text-sm font-medium text-white bg-success rounded-md hover:opacity-90 active:opacity-80 transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-soft"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -1425,14 +1427,14 @@ export default function RequestsPage({ role = 'student' }) {
 
                     {/* Deadline warning */}
                     {req.linkedExam && req.status !== 'resolved' && req.status !== 'rejected' && (
-                      <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded text-xs">
+                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-xs">
                         <svg className="w-3.5 h-3.5 text-warning shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="font-medium text-warning">
                           {daysUntil(req.linkedExam.deadline)} days left to appeal
                         </span>
-                        <span className="text-amber-600 dark:text-amber-400">— {req.linkedExam.name}</span>
+                        <span className="text-warning">— {req.linkedExam.name}</span>
                       </div>
                     )}
                   </div>

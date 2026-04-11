@@ -108,7 +108,7 @@ export default function RequestDetailPage({ request, onBack }) {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <span className="font-mono text-xs text-ink-muted">{request.id}</span>
-              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${status.bg} ${status.text} border ${status.border}`}>
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${status.bg} ${status.text}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                 {status.label}
               </span>

@@ -167,7 +167,7 @@ export default function RegisterPage() {
 
         <div className="absolute inset-0 flex flex-col justify-between p-10">
           <div className="text-white">
-            <div className="inline-flex items-center bg-white/15 backdrop-blur-md rounded-full px-3 py-1 mb-5 border border-white/20">
+            <div className="inline-flex items-center bg-surface/15 backdrop-blur-md rounded-full px-3 py-1 mb-5 border border-edge-strong">
               <span className="text-xs font-medium tracking-wide">{t('register.joinCommunity')}</span>
             </div>
             <h2 className="text-4xl font-bold leading-tight tracking-tight">

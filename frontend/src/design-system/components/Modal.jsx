@@ -61,7 +61,7 @@ export function Modal({
         aria-labelledby={title ? 'modal-title' : undefined}
         className={`
           relative z-10 w-full ${widths[size]}
-          bg-surface rounded-lg shadow-card border border-edge
+          bg-surface rounded-xl shadow-card border border-edge
           animate-in fade-in zoom-in-95
           ${className}
         `}
@@ -74,7 +74,7 @@ export function Modal({
             </h2>
             <button
               onClick={onClose}
-              className="p-1 rounded-md text-ink-muted hover:text-ink-secondary hover:bg-surface-200 transition-colors"
+              className="p-1 rounded-md text-ink-muted hover:text-ink-secondary hover:bg-surface-200 focus:outline-none focus:ring-2 focus:ring-brand/30 transition-colors"
               aria-label="Close"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

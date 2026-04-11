@@ -45,47 +45,47 @@ function AttendanceRow({ student, enseignementId, selectedDate, onAttendanceMark
   };
 
   return (
-    <tr className="border-b dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-      <td className="px-6 py-4 font-mono text-sm text-slate-500 whitespace-nowrap">{student.matricule || 'N/A'}</td>
-      <td className="px-6 py-4 font-bold text-sm text-slate-800 dark:text-slate-200 whitespace-nowrap">
+    <tr className="border-b border-edge-subtle hover:bg-surface-200/60 transition-colors duration-150">
+      <td className="px-6 py-4 font-mono text-sm text-ink-tertiary whitespace-nowrap">{student.matricule || 'N/A'}</td>
+      <td className="px-6 py-4 font-semibold text-sm text-ink whitespace-nowrap">
         {student.nom} {student.prenom}
       </td>
       
       <td className="px-6 py-4">
-        {status === 'None' && <span className="text-slate-400 italic text-xs">{t('unmarked')}</span>}
-        {status === 'Present' && <span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-1 rounded">{t('present')}</span>}
-        {status === 'Unjustified' && <span className="text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded">{t('absent')}</span>}
-        {status === 'Justified' && <span className="text-orange-600 font-bold text-xs bg-orange-50 px-2 py-1 rounded">{t('justified')}</span>}
+        {status === 'None' && <span className="text-ink-muted italic text-xs">{t('unmarked')}</span>}
+        {status === 'Present' && <span className="rounded-md border border-success/30 bg-success/10 px-2 py-1 text-xs font-medium text-success">{t('present')}</span>}
+        {status === 'Unjustified' && <span className="rounded-md border border-danger/30 bg-danger/10 px-2 py-1 text-xs font-medium text-danger">{t('absent')}</span>}
+        {status === 'Justified' && <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-medium text-warning">{t('justified')}</span>}
       </td>
 
       <td className="px-6 py-4 text-right">
         <div className={`inline-flex gap-2 transition-opacity ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
           <button 
             onClick={() => handleMark(true, false)}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-brand/30 ${
               status === 'Present' 
-                ? 'bg-green-500 text-white border-green-600 shadow-sm' 
-                : 'bg-white text-green-700 border-green-200 hover:bg-green-50 dark:bg-slate-800 dark:border-green-900/50'
+                ? 'bg-success text-white border-success shadow-soft' 
+                : 'bg-surface text-success border-success/30 hover:bg-success/10'
             }`}
           >
             &#x2714; P
           </button>
           <button 
             onClick={() => handleMark(false, false)}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-brand/30 ${
               status === 'Unjustified' 
-                ? 'bg-red-500 text-white border-red-600 shadow-sm' 
-                : 'bg-white text-red-700 border-red-200 hover:bg-red-50 dark:bg-slate-800 dark:border-red-900/50'
+                ? 'bg-danger text-white border-danger shadow-soft' 
+                : 'bg-surface text-danger border-danger/30 hover:bg-danger/10'
             }`}
           >
             &#x2716; A
           </button>
           <button 
             onClick={() => handleMark(false, true)}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-brand/30 ${
               status === 'Justified' 
-                ? 'bg-orange-500 text-white border-orange-600 shadow-sm' 
-                : 'bg-white text-orange-700 border-orange-200 hover:bg-orange-50 dark:bg-slate-800 dark:border-orange-900/50'
+                ? 'bg-warning text-white border-warning shadow-soft' 
+                : 'bg-surface text-warning border-warning/30 hover:bg-warning/10'
             }`}
           >
             &#x2716; J
@@ -115,26 +115,26 @@ export default function AttendanceBoard({ students, enseignementId, onDataChange
   }, [normalizedStudents, selectedDate]);
 
   if (normalizedStudents.length === 0) {
-    return <div className="text-center p-6 text-slate-500 bg-white dark:bg-slate-800 rounded-xl">{t('noStudents')}</div>;
+    return <div className="rounded-lg border border-edge bg-surface p-6 text-center text-sm text-ink-secondary">{t('noStudents')}</div>;
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-[700px]">
+    <div className="flex h-[700px] flex-col rounded-lg border border-edge bg-surface shadow-card">
       
       {/* Header with Date Picker */}
-      <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-          <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      <div className="flex flex-col items-center justify-between gap-4 border-b border-edge bg-surface-200 px-6 py-4 sm:flex-row">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-ink">
+          <svg className="w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
           {t('dailyTracking')}
         </h3>
         
         <div className="flex items-center gap-3">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('date')}</label>
+          <label className="text-xs font-semibold uppercase tracking-wide text-ink-tertiary">{t('date')}</label>
           <input 
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow"
+            className="rounded-md border border-control-border bg-control-bg p-2.5 text-sm font-medium text-ink outline-none transition-all duration-150 focus:border-brand focus:ring-2 focus:ring-brand/30"
             required
           />
         </div>
@@ -143,7 +143,7 @@ export default function AttendanceBoard({ students, enseignementId, onDataChange
       {/* Wrapping the table in a flex-1 robust scrollable container so the footer stays sticky at the bottom */}
       <div className="flex-1 overflow-x-auto overflow-y-auto w-full">
         <table className="w-full text-left">
-          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10 shadow-sm">
+          <thead className="sticky top-0 z-10 border-b border-edge bg-surface text-xs font-semibold uppercase text-ink-secondary">
             <tr>
               <th className="px-6 py-3">{t('matricule')}</th>
               <th className="px-6 py-3">{t('studentName')}</th>
@@ -166,23 +166,23 @@ export default function AttendanceBoard({ students, enseignementId, onDataChange
       </div>
 
       {/* Sticky Daily Summary Footer */}
-      <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-700">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <span className="font-bold text-slate-600 dark:text-slate-300">
-            {t('summaryFor')} <span className="text-blue-600 dark:text-blue-400">{selectedDate}</span>
+      <div className="border-t border-edge bg-surface-200 px-6 py-4">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <span className="font-semibold text-ink-secondary">
+            {t('summaryFor')} <span className="text-brand">{selectedDate}</span>
           </span>
           <div className="flex gap-4">
-            <div className="flex flex-col items-center p-2 px-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 min-w-[100px]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{t('totalPresent')}</span>
-              <span className="text-xl font-black text-green-600">{summary.present}</span>
+            <div className="min-w-[100px] rounded-md border border-success/30 bg-success/10 px-4 py-2 text-center">
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-ink-tertiary">{t('totalPresent')}</span>
+              <span className="text-xl font-bold text-success">{summary.present}</span>
             </div>
-            <div className="flex flex-col items-center p-2 px-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 min-w-[100px]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{t('totalAbsent')}</span>
-              <span className="text-xl font-black text-red-600">{summary.absent}</span>
+            <div className="min-w-[100px] rounded-md border border-danger/30 bg-danger/10 px-4 py-2 text-center">
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-ink-tertiary">{t('totalAbsent')}</span>
+              <span className="text-xl font-bold text-danger">{summary.absent}</span>
             </div>
-            <div className="flex flex-col items-center p-2 px-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 min-w-[100px]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{t('justified')}</span>
-              <span className="text-xl font-black text-orange-600">{summary.justified}</span>
+            <div className="min-w-[100px] rounded-md border border-warning/30 bg-warning/10 px-4 py-2 text-center">
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-ink-tertiary">{t('justified')}</span>
+              <span className="text-xl font-bold text-warning">{summary.justified}</span>
             </div>
           </div>
         </div>

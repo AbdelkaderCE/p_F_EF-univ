@@ -55,7 +55,7 @@ export default function HeroSection() {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white py-20">
         {/* Badge */}
-        <div className="inline-flex items-center bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-8 border border-white/30">
+        <div className="inline-flex items-center rounded-full border border-edge-strong bg-surface/20 px-4 py-2 mb-8 backdrop-blur-sm">
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2" />
           <span className="text-sm font-medium">{t('hero.badge')}</span>
         </div>
@@ -77,7 +77,7 @@ export default function HeroSection() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
           <Link
             to="/login"
-            className="group relative px-6 py-2.5 bg-white text-ink rounded-md font-medium text-sm hover:shadow-card focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 transition-all duration-150 overflow-hidden"
+            className="group relative rounded-md border border-edge bg-surface px-6 py-2.5 text-sm font-medium text-ink transition-all duration-150 hover:shadow-card hover:bg-surface-200 focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 focus:ring-offset-canvas overflow-hidden"
           >
             <span className="relative z-10 flex items-center">
               {t('common.getStarted')}
@@ -87,7 +87,7 @@ export default function HeroSection() {
           </Link>
 
           <button
-            className="group bg-white/10 backdrop-blur-sm px-6 py-2.5 rounded-md font-medium text-sm hover:bg-white/20 transition-all duration-150 flex items-center border border-white/30 focus:ring-2 focus:ring-white/30 focus:ring-offset-2"
+            className="group flex items-center rounded-md border border-edge-strong bg-surface/10 px-6 py-2.5 text-sm font-medium text-surface backdrop-blur-sm transition-all duration-150 hover:bg-surface hover:text-ink focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 focus:ring-offset-canvas"
             onClick={() => window.open('#', '_blank')}
           >
             <PlayIcon className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -113,7 +113,7 @@ export default function HeroSection() {
 
       {/* Scroll indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-pulse">
-        <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
+        <div className="w-6 h-10 border-2 border-edge-strong rounded-full flex justify-center">
           <div className="w-1 h-2 bg-white rounded-full mt-2 animate-pulse" />
         </div>
       </div>

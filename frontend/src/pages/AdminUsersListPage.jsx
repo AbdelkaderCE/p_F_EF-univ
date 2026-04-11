@@ -671,7 +671,7 @@ export default function AdminUsersListPage() {
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-3">
                       {ROLE_OPTIONS.map((role) => (
-                        <label key={`${index}-${role.value}`} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition ${row.roleNames.includes(role.value) ? 'border-cyan-300 bg-cyan-100 text-cyan-800' : 'border-edge bg-canvas text-ink-secondary hover:border-cyan-200 hover:bg-cyan-50'}`}>
+                        <label key={`${index}-${role.value}`} className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm transition ${row.roleNames.includes(role.value) ? 'bg-cyan-100 text-cyan-800' : 'bg-canvas text-ink-secondary hover:bg-cyan-50'}`}>
                           <input
                             type="checkbox"
                             className="accent-brand"

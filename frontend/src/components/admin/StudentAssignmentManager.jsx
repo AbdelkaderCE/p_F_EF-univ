@@ -276,7 +276,7 @@ const StudentAssignmentManager = ({ groupId, onSuccess }) => {
           )}
 
           {/* Students List */}
-          <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-3">
+          <div className="space-y-2 max-h-96 overflow-y-auto border border-edge rounded-lg p-3">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader className="w-6 h-6 text-gray-400 animate-spin" />
@@ -285,7 +285,7 @@ const StudentAssignmentManager = ({ groupId, onSuccess }) => {
               students.map((student) => (
                 <label
                   key={student.id}
-                  className="flex items-center p-3 border border-gray-200 rounded hover:bg-blue-50 cursor-pointer transition"
+                  className="flex items-center p-3 border border-edge rounded hover:bg-surface-200 cursor-pointer transition"
                 >
                   <input
                     type="checkbox"
@@ -346,12 +346,12 @@ const StudentAssignmentManager = ({ groupId, onSuccess }) => {
           </h3>
 
           {/* Assigned Students List */}
-          <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-3">
+          <div className="space-y-2 max-h-96 overflow-y-auto border border-edge rounded-lg p-3">
             {assignedStudents.length > 0 ? (
               assignedStudents.map((student) => (
                 <div
                   key={student.id}
-                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                  className="flex items-center justify-between p-3 border border-edge rounded-lg hover:bg-surface-200 transition"
                 >
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">
@@ -395,8 +395,8 @@ const StudentAssignmentManager = ({ groupId, onSuccess }) => {
           </div>
 
           {/* Summary Card */}
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-4 p-4 bg-brand-light border border-brand/30 rounded-lg">
+            <p className="text-sm text-brand">
               <strong>Stats:</strong> {assignedStudents.length} students assigned
               {groupLeader && (
                 <span className="block mt-1">

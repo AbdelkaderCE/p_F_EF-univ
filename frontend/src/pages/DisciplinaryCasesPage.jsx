@@ -180,15 +180,15 @@ const waitForNodeImages = async (container) => {
 /* ── Status Configs ─────────────────────────────────────────── */
 
 const CASE_STATUS_CONFIG = {
-  pending:    { label: 'Pending Investigation', bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-warning', border: 'border-amber-200 dark:border-amber-800/50', dot: 'bg-warning' },
-  hearing:    { label: 'Hearing Scheduled', bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-brand', border: 'border-blue-200 dark:border-blue-800/50', dot: 'bg-brand' },
-  sanctioned: { label: 'Sanction Applied', bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-danger', border: 'border-red-200 dark:border-red-800/50', dot: 'bg-danger' },
-  closed:     { label: 'Case Closed', bg: 'bg-green-50 dark:bg-green-950/40', text: 'text-success', border: 'border-green-200 dark:border-green-800/50', dot: 'bg-success' },
+  pending:    { label: 'Pending Investigation', bg: 'bg-warning/10', text: 'text-warning', border: 'border-warning/30', dot: 'bg-warning' },
+  hearing:    { label: 'Hearing Scheduled', bg: 'bg-brand-light', text: 'text-brand', border: 'border-brand/30', dot: 'bg-brand' },
+  sanctioned: { label: 'Sanction Applied', bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-danger' },
+  closed:     { label: 'Case Closed', bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success' },
 };
 
 const MEETING_STATUS_CONFIG = {
-  scheduled: { label: 'Scheduled', bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-brand', border: 'border-blue-200 dark:border-blue-800/50', dot: 'bg-brand' },
-  finalized: { label: 'Finalized', bg: 'bg-green-50 dark:bg-green-950/40', text: 'text-success', border: 'border-green-200 dark:border-green-800/50', dot: 'bg-success' },
+  scheduled: { label: 'Scheduled', bg: 'bg-brand-light', text: 'text-brand', border: 'border-brand/30', dot: 'bg-brand' },
+  finalized: { label: 'Finalized', bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success' },
 };
 
 const VIOLATION_TYPES = ['All', 'Plagiarism', 'Exam Fraud', 'Misconduct'];
@@ -740,7 +740,7 @@ function StatusBadge({ status, config }) {
   const cfg = config[status];
   if (!cfg) return null;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${cfg.bg} ${cfg.text} border ${cfg.border}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${cfg.bg} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -749,10 +749,10 @@ function StatusBadge({ status, config }) {
 
 function StatCard({ label, value, icon, accent = 'brand' }) {
   const accents = {
-    brand:   'bg-blue-50 dark:bg-blue-950/40 text-brand',
-    warning: 'bg-amber-50 dark:bg-amber-950/40 text-warning',
-    danger:  'bg-red-50 dark:bg-red-950/40 text-danger',
-    success: 'bg-green-50 dark:bg-green-950/40 text-success',
+    brand:   'bg-brand-light text-brand',
+    warning: 'bg-warning/10 text-warning',
+    danger:  'bg-danger/10 text-danger',
+    success: 'bg-success/10 text-success',
   };
   return (
     <div className="bg-surface rounded-lg border border-edge shadow-card p-5 flex items-center gap-4">
@@ -1037,11 +1037,11 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
     <div className="space-y-6 min-w-0">
 
       {/* Confidential banner */}
-      <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-lg px-4 py-3 flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
         {icons.lock({ className: 'w-5 h-5 text-warning shrink-0' })}
         <div>
           <p className="text-sm font-medium text-warning">Restricted Access — Confidential Records</p>
-          <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+          <p className="mt-0.5 text-xs text-warning">
             This module contains sensitive disciplinary data. Access is logged and limited to authorized personnel only.
           </p>
         </div>
@@ -1794,9 +1794,9 @@ function MeetingDetailView({ meeting, cases, onBack }) {
           </div>
 
           {/* Case context */}
-          <div className="mx-6 mt-4 mb-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-lg px-4 py-3 flex items-center gap-3">
+          <div className="mx-6 mb-4 mt-4 flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
             {icons.alert({ className: 'w-4 h-4 text-warning shrink-0' })}
-            <p className="text-xs text-amber-700 dark:text-amber-400">
+            <p className="text-xs text-warning">
               Case {c.id} — {c.description.substring(0, 120)}{c.description.length > 120 ? '...' : ''}
             </p>
           </div>
@@ -1872,13 +1872,13 @@ function MeetingDetailView({ meeting, cases, onBack }) {
       )}
 
       {finalizeError && (
-        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 rounded-lg px-5 py-4">
+        <div className="rounded-lg border border-danger/30 bg-danger/10 px-5 py-4">
           <span className="text-sm font-medium text-danger">{finalizeError}</span>
         </div>
       )}
 
       {finalized && (
-        <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/50 rounded-lg px-5 py-4 flex items-center gap-3">
+        <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-5 py-4">
           {icons.check({ className: 'w-5 h-5 text-success' })}
           <span className="text-sm font-medium text-success">Meeting finalized — statuses have been updated.</span>
         </div>

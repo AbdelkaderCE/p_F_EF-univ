@@ -10,11 +10,11 @@ const FALLBACK_DOCUMENTS = [
 ];
 
 const CATEGORY_STYLES = {
-  Administrative: 'border-blue-200 bg-blue-50 text-brand',
-  Academic: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  PFE: 'border-amber-200 bg-amber-50 text-amber-700',
-  Calendar: 'border-violet-200 bg-violet-50 text-violet-700',
-  Autre: 'border-slate-200 bg-slate-50 text-slate-700',
+  Administrative: 'bg-blue-50 text-brand',
+  Academic: 'bg-emerald-50 text-emerald-700',
+  PFE: 'bg-amber-50 text-amber-700',
+  Calendar: 'bg-violet-50 text-violet-700',
+  Autre: 'bg-slate-50 text-slate-700',
 };
 
 function mapCategory(value) {
@@ -121,7 +121,7 @@ export default function DocumentsPage() {
               <article key={doc.id} className="rounded-lg border border-edge bg-surface p-4 shadow-card transition hover:border-brand/25">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-sm font-semibold text-ink leading-6">{doc.name}</h3>
-                  <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold ${CATEGORY_STYLES[doc.category] || 'border-edge bg-surface-200 text-ink-secondary'}`}>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${CATEGORY_STYLES[doc.category] || 'bg-surface-200 text-ink-secondary'}`}>
                     {doc.category}
                   </span>
                 </div>

@@ -206,7 +206,7 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
               Teachers
             </h3>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-3">
+            <div className="space-y-2 max-h-96 overflow-y-auto border border-edge rounded-lg p-3">
               {loading && teachers.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader className="w-6 h-6 text-gray-400 animate-spin" />
@@ -219,7 +219,7 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
                     className={`w-full text-left p-3 border rounded-lg transition ${
                       selectedTeacher?.id === teacher.id
                         ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        : 'border-edge hover:bg-surface-200'
                     }`}
                   >
                     <p className="font-medium text-gray-900">
@@ -241,7 +241,7 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
               Courses
             </h3>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-3">
+            <div className="space-y-2 max-h-96 overflow-y-auto border border-edge rounded-lg p-3">
               {!selectedTeacher ? (
                 <p className="text-center text-gray-500 py-4">
                   Select a teacher first
@@ -258,7 +258,7 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
                     className={`w-full text-left p-3 border rounded-lg transition ${
                       selectedCourse?.id === course.id
                         ? 'border-green-600 bg-green-50'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        : 'border-edge hover:bg-surface-200'
                     }`}
                   >
                     <p className="font-medium text-gray-900">{course.name}</p>
@@ -283,7 +283,7 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
               Groups
             </h3>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-3">
+            <div className="space-y-2 max-h-96 overflow-y-auto border border-edge rounded-lg p-3">
               {!selectedCourse ? (
                 <p className="text-center text-gray-500 py-4">
                   Select a course first
@@ -297,7 +297,7 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
                   <button
                     key={group.id}
                     onClick={() => handleGroupSelect(group)}
-                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-600 transition"
+                    className="w-full text-left p-3 border border-edge rounded-lg hover:bg-surface-200 hover:border-brand transition"
                   >
                     <p className="font-medium text-gray-900">{group.nom}</p>
                     <p className="text-sm text-gray-500">
@@ -319,7 +319,7 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
       {step === 2 && groupDetails && (
         <div className="space-y-6">
           {/* Group Info Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
+          <div className="bg-brand-light border border-brand/30 rounded-lg p-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               {groupDetails.nom}
             </h3>
@@ -369,9 +369,9 @@ const TeacherAssignmentWorkflow = ({ onComplete }) => {
               Assigned Students ({groupDetails.students.length})
             </h3>
 
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <div className="overflow-x-auto border border-edge rounded-lg">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-gray-200">
+                <thead className="bg-brand-light border-b border-edge">
                   <tr>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                       Name

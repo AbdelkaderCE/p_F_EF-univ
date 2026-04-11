@@ -31,7 +31,7 @@ const UserRegistrationForm = ({ onSuccess }) => {
     const hasStudent = selectedRoles.some(r => STUDENT_ROLES.includes(r));
 
     if (hasTeacher && hasStudent) {
-      setRoleWarning('⚠️ Cannot mix teacher and student roles');
+      setRoleWarning('Cannot mix teacher and student roles');
       return false;
     }
     setRoleWarning('');
@@ -258,7 +258,7 @@ const UserRegistrationForm = ({ onSuccess }) => {
               name="sexe"
               value={formData.sexe}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-control-border bg-control-bg text-ink rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30"
             >
               <option value="">—</option>
               <option value="H">Male</option>
@@ -274,7 +274,7 @@ const UserRegistrationForm = ({ onSuccess }) => {
           </label>
 
           {roleWarning && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+            <div className="mb-4 p-3 bg-warning/10 border border-warning/30 rounded-lg flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <p className="text-yellow-800 text-sm">{roleWarning}</p>
             </div>
@@ -290,7 +290,7 @@ const UserRegistrationForm = ({ onSuccess }) => {
             {availableRoles.map((role) => (
               <label
                 key={role.id}
-                className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition"
+                className="flex items-center p-3 border border-edge rounded-lg hover:bg-surface-200 cursor-pointer transition"
               >
                 <input
                   type="checkbox"
@@ -336,7 +336,7 @@ const UserRegistrationForm = ({ onSuccess }) => {
           </button>
           <button
             type="reset"
-            className="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+            className="px-6 py-3 border border-edge text-ink-secondary font-semibold rounded-lg hover:bg-surface-200 transition"
           >
             Clear
           </button>
@@ -344,8 +344,8 @@ const UserRegistrationForm = ({ onSuccess }) => {
       </form>
 
       {/* Helper Information */}
-      <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
+      <div className="mt-8 p-4 bg-brand-light border border-brand/30 rounded-lg">
+        <p className="text-sm text-brand">
           <strong>Note:</strong> Teachers and Students cannot have overlapping roles to maintain system integrity.
           A user is either a teacher (Enseignant, Admin, Vice Doyen) or a student (Étudiant).
         </p>

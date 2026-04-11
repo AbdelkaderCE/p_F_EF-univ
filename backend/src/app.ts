@@ -16,6 +16,7 @@ import messageRoutes from "./modules/messages/routes/message.routes";
 import adminRoutes from "./modules/admin/routes/admin.routes";
 import teacherRoutes from "./modules/teacher/routes/teacher.routes";
 import actualitesRoutes from "./modules/actualites/routes/actualites.routes";
+import annoncesRoutes from "./modules/annonces/routes/annonces.routes";
 import aiRoutes from "./modules/ai/routes/ai.routes";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware";
 
@@ -81,6 +82,7 @@ app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/teacher", teacherRoutes);
 app.use("/api/v1/actualites", actualitesRoutes);
+app.use("/api/v1/annonces", annoncesRoutes);
 app.use("/api/v1/ai", aiRoutes);
 
 app.use(notFoundHandler);

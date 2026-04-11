@@ -265,26 +265,32 @@ Each group builds their module's backend endpoints following the **same JSON for
 For any resource (e.g. `annonces`):
 
 ```
-GET    /api/v1/annonces              → List (paginated)
+GET    /api/v1/annonces              → List (public)
 GET    /api/v1/annonces/:id          → Get one
-POST   /api/v1/annonces              → Create
-PUT    /api/v1/annonces/:id          → Update
-DELETE /api/v1/annonces/:id          → Delete
+POST   /api/v1/annonces              → Create (admin only)
+PUT    /api/v1/annonces/:id          → Update (admin only)
+DELETE /api/v1/annonces/:id          → Delete (admin only)
 ```
+
+#### Access Rules (Current Implementation)
+
+- `GET /api/v1/annonces` and `GET /api/v1/annonces/:id` are **public**.
+- `POST/PUT/DELETE /api/v1/annonces/*` require authenticated user with role `admin`.
+- List filters supported: `typeAnnonce` and `isExpired` (`true | false`).
 
 #### Example — Create Annonce
 
 **Request:**
 ```http
 POST /api/v1/annonces
-Content-Type: application/json
+Content-Type: multipart/form-data
 
 {
   "titre": "Examen final programmation",
   "contenu": "L'examen aura lieu le 25 juin...",
-  "typeId": 1,
-  "cible": "etudiants",
-  "priorite": "haute"
+  "typeAnnonce": "Academic",
+  "dateExpiration": "2026-06-25",
+  "file": "<optional attachment>"
 }
 ```
 
@@ -292,43 +298,49 @@ Content-Type: application/json
 ```json
 {
   "success": true,
+  "message": "Annonce créée avec succès",
   "data": {
     "id": 42,
-    "titre": "Examen final programmation",
-    "contenu": "L'examen aura lieu le 25 juin...",
+    "titre_ar": "Examen final programmation",
+    "titre_en": "Examen final programmation",
+    "contenu_ar": "L'examen aura lieu le 25 juin...",
+    "contenu_en": "L'examen aura lieu le 25 juin...",
     "auteurId": 5,
     "typeId": 1,
-    "cible": "etudiants",
-    "priorite": "haute",
-    "status": "publie",
-    "datePublication": "2025-06-20",
-    "createdAt": "2025-06-20T14:30:00.000Z"
-  },
-  "message": "Annonce créée avec succès"
+    "datePublication": "2026-04-11T10:30:00.000Z",
+    "dateExpiration": "2026-06-25T00:00:00.000Z",
+    "type": {
+      "id": 1,
+      "nom_ar": "Academic",
+      "nom_en": "Academic"
+    },
+    "documents": [
+      {
+        "id": 9,
+        "fichier": "/uploads/annonces/1712826000000-123456789.pdf",
+        "type": "pdf"
+      }
+    ]
+  }
 }
 ```
 
-#### Example — List with Pagination
+#### Example — List with Filters
 
 **Request:**
 ```http
-GET /api/v1/annonces?page=1&limit=20&cible=etudiants
+GET /api/v1/annonces?typeAnnonce=Academic&isExpired=false
 ```
 
 **Response (200):**
 ```json
 {
   "success": true,
+  "count": 2,
   "data": [
-    { "id": 42, "titre": "Examen final...", ... },
-    { "id": 41, "titre": "Changement emploi du temps...", ... }
-  ],
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 142,
-    "totalPages": 8
-  }
+    { "id": 42, "titre_ar": "Examen final...", "titre_en": "Final exam...", "type": { "nom_ar": "Academic", "nom_en": "Academic" }, "documents": [] },
+    { "id": 41, "titre_ar": "Changement emploi du temps...", "titre_en": "Schedule change...", "type": { "nom_ar": "Academic", "nom_en": "Academic" }, "documents": [] }
+  ]
 }
 ```
 

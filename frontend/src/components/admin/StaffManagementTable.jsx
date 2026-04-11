@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Edit2, Trash2, AlertCircle, Loader, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Search, Edit2, Trash2, AlertCircle, Loader } from 'lucide-react';
 import axios from 'axios';
+import { Alert, Button, Modal } from '../../design-system/components';
 
 const StaffManagementTable = ({ refreshKey = 0 }) => {
   const [users, setUsers] = useState([]);
@@ -178,18 +179,18 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
 
   // Get role badge color
   const getRoleBadgeColor = (roleNames) => {
-    if (!roleNames) return 'bg-gray-100 text-gray-700';
-    if (roleNames.includes('admin')) return 'bg-red-100 text-red-700';
-    if (roleNames.some((r) => ['enseignant', 'directeur_etude'].includes(r))) return 'bg-blue-100 text-blue-700';
-    if (roleNames.includes('etudiant')) return 'bg-green-100 text-green-700';
-    return 'bg-gray-100 text-gray-700';
+    if (!roleNames) return 'bg-surface-200 text-ink-secondary border border-edge';
+    if (roleNames.includes('admin')) return 'bg-danger/10 text-danger border border-danger/30';
+    if (roleNames.some((r) => ['enseignant', 'directeur_etude'].includes(r))) return 'bg-brand-light text-brand border border-brand/30';
+    if (roleNames.includes('etudiant')) return 'bg-success/10 text-success border border-success/30';
+    return 'bg-surface-200 text-ink-secondary border border-edge';
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader className="w-8 h-8 text-blue-600 animate-spin" />
-        <span className="ml-3 text-gray-600 font-semibold">Loading users...</span>
+        <Loader className="w-8 h-8 text-brand animate-spin" />
+        <span className="ml-3 text-ink-secondary font-semibold">Loading users...</span>
       </div>
     );
   }
@@ -198,34 +199,32 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
     <div className="space-y-6">
       {/* Success Message */}
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-          <span className="text-green-700 font-semibold">{successMessage}</span>
-        </div>
+        <Alert variant="success" title="Success">
+          {successMessage}
+        </Alert>
       )}
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-          <span className="text-red-700 font-semibold">{error}</span>
-        </div>
+        <Alert variant="error" title="Error">
+          {error}
+        </Alert>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Filters & Search</h3>
+      <div className="rounded-lg border border-edge bg-surface shadow-card p-6 space-y-4">
+        <h3 className="text-base font-semibold text-ink">Filters & Search</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-3 w-5 h-5 text-ink-muted" />
             <input
               type="text"
               placeholder="Search by email, name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-md border border-control-border bg-control-bg py-2.5 pl-10 pr-4 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
             />
           </div>
 
@@ -233,7 +232,7 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="rounded-md border border-control-border bg-control-bg px-4 py-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
           >
             <option value="all">All Roles</option>
             <option value="enseignant">Teacher</option>
@@ -243,48 +242,48 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
           </select>
         </div>
 
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-ink-secondary">
           Showing {paginatedUsers.length} of {filteredUsers.length} users
         </div>
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="rounded-lg border border-edge bg-surface shadow-card overflow-hidden">
         {filteredUsers.length === 0 ? (
           <div className="p-8 text-center">
-            <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 font-semibold">No users found</p>
+            <AlertCircle className="w-12 h-12 text-ink-muted mx-auto mb-3" />
+            <p className="text-ink-secondary font-semibold">No users found</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-surface-200 border-b border-edge">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-secondary uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-secondary uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-secondary uppercase tracking-wider">
                       Role(s)
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-secondary uppercase tracking-wider">
                       Contact
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-secondary uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-edge-subtle">
                   {paginatedUsers.map((user) => {
                     const roleNames = user.roles || [];
                     const isEditing = editingUser === user.id;
 
                     return (
-                      <tr key={user.id} className="hover:bg-gray-50 transition">
+                      <tr key={user.id} className="hover:bg-surface-200 transition-all duration-150">
                         <td className="px-6 py-4">
                           {isEditing ? (
                             <div className="space-y-2">
@@ -295,7 +294,7 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
                                 onChange={(e) =>
                                   setEditForm({ ...editForm, prenom: e.target.value })
                                 }
-                                className="w-full px-3 py-1 border border-gray-300 rounded text-sm"
+                                className="w-full rounded-md border border-control-border bg-control-bg px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                               />
                               <input
                                 type="text"
@@ -304,16 +303,16 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
                                 onChange={(e) =>
                                   setEditForm({ ...editForm, nom: e.target.value })
                                 }
-                                className="w-full px-3 py-1 border border-gray-300 rounded text-sm"
+                                className="w-full rounded-md border border-control-border bg-control-bg px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                               />
                             </div>
                           ) : (
-                            <div className="font-semibold text-gray-900">
+                            <div className="font-semibold text-ink">
                               {user.prenom} {user.nom}
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-gray-700">
+                        <td className="px-6 py-4 text-ink-secondary">
                           {isEditing ? (
                             <input
                               type="email"
@@ -321,7 +320,7 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
                               onChange={(e) =>
                                 setEditForm({ ...editForm, email: e.target.value })
                               }
-                              className="w-full px-3 py-1 border border-gray-300 rounded text-sm"
+                              className="w-full rounded-md border border-control-border bg-control-bg px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                             />
                           ) : (
                             user.email
@@ -329,14 +328,14 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${getRoleBadgeColor(
+                            className={`px-3 py-1 rounded-md text-xs font-medium ${getRoleBadgeColor(
                               roleNames
                             )}`}
                           >
                             {getRoleDisplay(roleNames)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-gray-700">
+                        <td className="px-6 py-4 text-ink-secondary">
                           {isEditing ? (
                             <input
                               type="tel"
@@ -344,7 +343,7 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
                               onChange={(e) =>
                                 setEditForm({ ...editForm, telephone: e.target.value })
                               }
-                              className="w-full px-3 py-1 border border-gray-300 rounded text-sm"
+                              className="w-full rounded-md border border-control-border bg-control-bg px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                             />
                           ) : (
                             user.telephone || '-'
@@ -354,31 +353,35 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
                           <div className="flex items-center gap-2">
                             {isEditing ? (
                               <>
-                                <button
+                                <Button
                                   onClick={saveEdit}
-                                  className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded text-sm font-semibold transition"
+                                  variant="secondary"
+                                  size="sm"
+                                  className="!h-8"
                                 >
                                   Save
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                   onClick={() => setEditingUser(null)}
-                                  className="px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded text-sm font-semibold transition"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="!h-8"
                                 >
                                   Cancel
-                                </button>
+                                </Button>
                               </>
                             ) : (
                               <>
                                 <button
                                   onClick={() => startEdit(user)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                  className="rounded-md p-2 text-brand hover:bg-brand-light transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-brand/30"
                                   title="Edit user"
                                 >
                                   <Edit2 className="w-5 h-5" />
                                 </button>
                                 <button
                                   onClick={() => setShowDeleteConfirm(user.id)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded transition"
+                                  className="rounded-md p-2 text-danger hover:bg-danger/10 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-danger/30"
                                   title="Delete user"
                                 >
                                   <Trash2 className="w-5 h-5" />
@@ -396,24 +399,26 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-between">
-                <button
+              <div className="bg-surface-200 border-t border-edge px-6 py-4 flex items-center justify-between">
+                <Button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  variant="secondary"
+                  size="sm"
                 >
                   Previous
-                </button>
-                <span className="text-sm text-gray-600">
+                </Button>
+                <span className="text-sm text-ink-secondary">
                   Page {currentPage} of {totalPages}
                 </span>
-                <button
+                <Button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  variant="secondary"
+                  size="sm"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             )}
           </>
@@ -421,30 +426,26 @@ const StaffManagementTable = ({ refreshKey = 0 }) => {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-sm p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Confirm Delete</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this user? This action cannot be undone.
-            </p>
-            <div className="flex gap-4 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-semibold transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteUser(showDeleteConfirm)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={Boolean(showDeleteConfirm)}
+        onClose={() => setShowDeleteConfirm(null)}
+        title="Confirm Delete"
+        size="sm"
+        footer={(
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" onClick={() => deleteUser(showDeleteConfirm)}>
+              Delete
+            </Button>
+          </>
+        )}
+      >
+        <p className="text-sm text-ink-secondary">
+          Are you sure you want to delete this user? This action cannot be undone.
+        </p>
+      </Modal>
     </div>
   );
 };

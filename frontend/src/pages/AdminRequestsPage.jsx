@@ -47,7 +47,7 @@ function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status];
   if (!cfg) return null;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${cfg.bg} ${cfg.text} border ${cfg.border}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${cfg.bg} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -455,7 +455,7 @@ export default function AdminRequestsPage() {
                                   href={fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="px-2.5 py-1 text-[11px] font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                  className="px-2.5 py-1 text-[11px] font-medium text-brand bg-blue-50 dark:bg-blue-950/40 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                                 >
                                   Preview
                                 </a>
@@ -464,7 +464,7 @@ export default function AdminRequestsPage() {
                                 <a
                                   href={fileUrl}
                                   download={file.name || undefined}
-                                  className="px-2.5 py-1 text-[11px] font-medium text-ink-secondary bg-surface border border-edge rounded-md hover:bg-surface-200 transition-colors"
+                                  className="px-2.5 py-1 text-[11px] font-medium text-ink-secondary bg-surface rounded-md hover:bg-surface-200 transition-colors"
                                 >
                                   Download
                                 </a>

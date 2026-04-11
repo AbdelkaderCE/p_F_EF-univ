@@ -133,7 +133,7 @@ function triggerDownload(blob, fileName) {
 
 function StatusBadge({ status, label }) {
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${normalizeStatusClass(status)}`}>
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${normalizeStatusClass(status)}`}>
       {label}
     </span>
   );

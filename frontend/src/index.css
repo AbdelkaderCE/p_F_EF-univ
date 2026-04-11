@@ -55,6 +55,9 @@ html, body, #root {
   /* Shadows */
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+
+  /* Tailwind focus ring offset */
+  --tw-ring-offset-color: var(--color-canvas);
 }
 
 /* ── DARK MODE ─────────────────────────────────────────────────── */
@@ -90,6 +93,9 @@ html, body, #root {
   /* Shadows — deeper for dark */
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+
+  /* Tailwind focus ring offset */
+  --tw-ring-offset-color: var(--color-canvas);
 }
 
 
@@ -235,6 +241,43 @@ html, body, #root {
       linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
     background-size: 50px 50px;
   }
+}
+
+/* ── DARK MODE BORDER SAFETY SHIM (global legacy coverage) ───── */
+.dark [class*="border-gray-"]:not([class*="dark:border-"]),
+.dark [class*="border-slate-"]:not([class*="dark:border-"]),
+.dark [class*="border-blue-"]:not([class*="dark:border-"]),
+.dark [class*="border-cyan-"]:not([class*="dark:border-"]),
+.dark [class*="border-teal-"]:not([class*="dark:border-"]),
+.dark [class*="border-indigo-"]:not([class*="dark:border-"]),
+.dark [class*="border-violet-"]:not([class*="dark:border-"]),
+.dark [class*="border-purple-"]:not([class*="dark:border-"]),
+.dark [class*="border-lime-"]:not([class*="dark:border-"]),
+.dark [class*="border-yellow-"]:not([class*="dark:border-"]),
+.dark [class*="border-amber-"]:not([class*="dark:border-"]),
+.dark [class*="border-orange-"]:not([class*="dark:border-"]),
+.dark [class*="border-red-"]:not([class*="dark:border-"]),
+.dark [class*="border-rose-"]:not([class*="dark:border-"]),
+.dark [class*="border-pink-"]:not([class*="dark:border-"]),
+.dark [class*="border-green-"]:not([class*="dark:border-"]),
+.dark .border-white,
+.dark .border-white\/10,
+.dark .border-white\/20,
+.dark .border-white\/30 {
+  border-color: var(--color-edge) !important;
+}
+
+.dark .border-gray-300:not([class*="dark:border-"]),
+.dark .border-slate-300:not([class*="dark:border-"]),
+.dark .border-white:not([class*="dark:border-"]) {
+  border-color: var(--color-edge-strong) !important;
+}
+
+/* Strict cleanup: small label chips are borderless */
+span[class*="text-xs"][class*="rounded"][class*="border"],
+span[class*="text-[11px]"][class*="rounded"][class*="border"],
+label[class*="text-xs"][class*="rounded"][class*="border"] {
+  border-width: 0 !important;
 }
 
 /* ── Animations ──────────────────────────────────────────────── */

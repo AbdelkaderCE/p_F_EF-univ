@@ -41,7 +41,7 @@ export function TextInput({
           focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand
           transition-colors duration-150
           disabled:opacity-50 disabled:cursor-not-allowed
-          ${error ? 'border-danger focus:ring-red-500/30 focus:border-danger' : 'border-control-border'}
+          ${error ? 'border-danger focus:ring-danger/30 focus:border-danger' : 'border-control-border'}
         `}
         aria-invalid={!!error}
         aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}

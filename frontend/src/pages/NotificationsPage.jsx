@@ -3,9 +3,9 @@ import request from '../services/api';
 import { connectNotificationsSocket } from '../services/realtime';
 
 function priorityClasses(priority) {
-  if (priority === 'high') return 'border-danger/25 bg-danger/10 text-danger';
-  if (priority === 'medium') return 'border-brand/25 bg-brand-light text-brand';
-  return 'border-edge bg-surface text-ink-secondary';
+  if (priority === 'high') return 'bg-danger/10 text-danger';
+  if (priority === 'medium') return 'bg-brand-light text-brand';
+  return 'bg-surface text-ink-secondary';
 }
 
 function toRelativeTime(value) {
@@ -186,7 +186,7 @@ export default function NotificationsPage() {
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${priorityClasses(item.priority)}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${priorityClasses(item.priority)}`}>
                       {item.category}
                     </span>
                     {!item.read ? <span className="rounded-full bg-brand px-2.5 py-1 text-xs font-semibold text-white">Unread</span> : null}
