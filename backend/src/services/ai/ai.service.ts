@@ -19,53 +19,123 @@ export interface AIResponse {
   metadata?: Record<string, unknown>;
 }
 
-// Mock AI service - replace with actual AI implementation
-export const generateAIResponse = async (
-  context: ConversationContext
-): Promise<AIResponse> => {
+type GroqMessage = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+const GROQ_TEMPERATURE = Number(process.env.GROQ_TEMPERATURE || 0.7);
+const GROQ_MAX_TOKENS = Number(process.env.GROQ_MAX_TOKENS || 1024);
+
+const trimMessages = (messages: ConversationMessage[]): ConversationMessage[] =>
+  messages
+    .slice(-12)
+    .map((message) => ({
+      role: message.role,
+      content: String(message.content || "").slice(0, 2000),
+    }))
+    .filter((message) => message.content.trim().length > 0);
+
+const toGroqMessages = (context: ConversationContext): GroqMessage[] => {
+  const baseSystemPrompt =
+    context.systemPrompt ||
+    "You are the G11 university assistant. Be concise, accurate, and helpful.";
+
+  const scopedMessages = trimMessages(context.messages);
+
+  return [
+    { role: "system", content: baseSystemPrompt },
+    ...scopedMessages.map((message) => ({ role: message.role, content: message.content })),
+  ];
+};
+
+const generateFallbackResponse = (context: ConversationContext): string => {
+  const lastMessage = context.messages[context.messages.length - 1];
+  const userQuery = (lastMessage?.content || "").toLowerCase();
+
+  if (userQuery.includes("pfe") || userQuery.includes("projet")) {
+    return "Le PFE est disponible dans votre espace académique. Consultez les sujets, groupes et échéances dans la section PFE.";
+  }
+  if (userQuery.includes("document") || userQuery.includes("fichier")) {
+    return "Vous pouvez accéder aux documents via la section Documents. Si vous voulez, je peux vous guider selon votre rôle.";
+  }
+  if (userQuery.includes("demande") || userQuery.includes("réclamation") || userQuery.includes("reclamation")) {
+    return "Les demandes se font via la section Requêtes. Vous pouvez créer une réclamation ou une justification puis suivre son statut.";
+  }
+
+  return "Je suis votre assistant académique G11. Posez-moi une question sur le PFE, les documents, les requêtes, ou le suivi académique.";
+};
+
+export const generateAIResponse = async (context: ConversationContext): Promise<AIResponse> => {
   try {
-    const lastMessage = context.messages[context.messages.length - 1];
+    const groqApiKey = process.env.GROQ_API_KEY;
+    const messages = toGroqMessages(context);
 
-    if (!lastMessage || lastMessage.role !== "user") {
-      throw new Error("Invalid conversation context");
+    if (!groqApiKey) {
+      logger.warn("GROQ_API_KEY is missing. Falling back to local AI response.");
+      return {
+        message: generateFallbackResponse(context),
+        confidence: 0.6,
+        suggestedActions: ["Voir mes informations", "Ouvrir PFE", "Créer une requête"],
+        metadata: { provider: "fallback", reason: "missing_api_key" },
+      };
     }
 
-    const userQuery = lastMessage.content;
+    const response = await fetch(GROQ_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${groqApiKey}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages,
+        temperature: Number.isFinite(GROQ_TEMPERATURE) ? GROQ_TEMPERATURE : 0.7,
+        max_tokens: Number.isFinite(GROQ_MAX_TOKENS) ? GROQ_MAX_TOKENS : 1024,
+      }),
+    });
 
-    // Simple keyword-based responses for demo
-    let response = "";
-    const lowerQuery = userQuery.toLowerCase();
+    const payload = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: Record<string, unknown>;
+      error?: { message?: string };
+    };
 
-    if (lowerQuery.includes("pfe") || lowerQuery.includes("projet")) {
-      response =
-        "Le PFE (Projet de Fin d'Études) est un projet académique important. Vous pouvez consulter les sujets disponibles, soumettre votre groupe et suivre la progression. Avez-vous des questions spécifiques sur une étape du PFE?";
-    } else if (
-      lowerQuery.includes("document") ||
-      lowerQuery.includes("fichier")
-    ) {
-      response =
-        "Les documents sont disponibles dans la section Documents. Vous pouvez télécharger des guides, des modèles, et d'autres ressources utiles pour vos études.";
-    } else if (lowerQuery.includes("demande") || lowerQuery.includes("request")) {
-      response =
-        "Vous pouvez créer une demande dans la section Requêtes. Remplissez le formulaire avec les détails nécessaires et soumettez votre demande pour approbation.";
-    } else if (lowerQuery.includes("note") || lowerQuery.includes("grade")) {
-      response =
-        "Vos notes et résultats académiques sont consultables dans votre tableau de bord. Veuillez contacter votre enseignant si vous avez des questions concernant une note.";
-    } else {
-      response =
-        "Je suis un assistant IA pour vous aider avec les informations académiques. Vous pouvez me poser des questions sur le PFE, les documents, les demandes, les notes, ou d'autres sujets académiques.";
+    if (!response.ok) {
+      const providerError = payload?.error?.message || `Groq API error (${response.status})`;
+      throw new Error(providerError);
     }
 
-    logger.info(`AI response generated for user ${context.userId}`);
+    const reply = payload?.choices?.[0]?.message?.content?.trim();
+    if (!reply) {
+      throw new Error("Groq returned an empty response");
+    }
+
+    logger.info(`AI response generated via Groq for user ${context.userId}`);
 
     return {
-      message: response,
-      confidence: 0.85,
-      suggestedActions: ["Voir plus d'informations", "Poser une autre question"],
+      message: reply,
+      confidence: 0.9,
+      suggestedActions: ["Continuer", "Voir les détails", "Poser une autre question"],
+      metadata: {
+        provider: "groq",
+        model: GROQ_MODEL,
+        usage: payload?.usage || null,
+      },
     };
   } catch (error) {
     logger.error("Error generating AI response:", error);
-    throw new Error("Failed to generate AI response");
+    return {
+      message: generateFallbackResponse(context),
+      confidence: 0.55,
+      suggestedActions: ["Réessayer", "Reformuler", "Contacter l'administration"],
+      metadata: {
+        provider: "fallback",
+        reason: error instanceof Error ? error.message : "unknown_error",
+      },
+    };
   }
 };
 
@@ -154,16 +224,32 @@ export const storeConversation = async (
 };
 
 export const buildSystemPrompt = (userRole: string): string => {
+  const globalRules = `
+You are the in-app assistant for the G11 university platform.
+Mandatory rules:
+- The user is already authenticated in this application context.
+- Never ask for identity verification steps (student id, date of birth, institutional email confirmation, etc.).
+- Never invent URLs, emails, phone numbers, offices, or external portals.
+- Never mention imaginary policies, legal disclaimers, or security procedures unless explicitly provided by user content.
+- If data is unavailable, say it clearly and guide the user to the correct in-app section only.
+- Keep responses concise, practical, and action-oriented.
+- Default language is French unless the user writes in another language.
+- Prefer plain text over heavy markdown formatting.
+`;
+
   const prompts: Record<string, string> = {
-    etudiant: `You are a helpful academic assistant for a student. You provide information about PFE projects, documents, academic requests, grades, and discipline cases. 
-    Always be supportive and guide students to the appropriate resources or personnel for specific issues.
-    Respond in French unless the student uses English.`,
-    enseignant: `You are a helpful academic assistant for a teacher. You provide information about teaching responsibilities, PFE supervision, student management, and administrative tasks.
-    Always be professional and guide teachers to the appropriate resources or administrative departments.
-    Respond in French unless the teacher uses English.`,
-    admin: `You are a helpful administrative assistant. You provide information about system management, user administration, reports, and institutional policies.
-    Always be professional and detailed in your responses.
-    Respond in French unless the administrator uses English.`,
+    etudiant: `${globalRules}
+Role: student assistant.
+Focus on PFE, modules, documents, requests/reclamations, justifications, and discipline workflow for the logged-in student.
+When asked for personal status (e.g., PFE/soutenance), answer directly if possible; otherwise say what to check in the app dashboard sections.`,
+    enseignant: `${globalRules}
+Role: teacher assistant.
+Focus on courses, assigned students, announcements, reclamations follow-up, and PFE supervision tasks.
+Give concrete next steps using in-app teacher pages and actions.`,
+    admin: `${globalRules}
+Role: admin assistant.
+Focus on user management, announcements, requests workflows, documents, and operational summaries.
+Give concise operational guidance grounded in existing platform features.`,
   };
 
   return (

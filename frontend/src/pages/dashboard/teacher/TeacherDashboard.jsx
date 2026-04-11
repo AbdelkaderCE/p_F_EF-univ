@@ -104,18 +104,18 @@ function formatFileSize(value) {
 
 function statusBadgeClass(status) {
   if (status === 'published' || status === 'approved') {
-    return 'bg-green-50 text-green-700 border-green-200';
+    return 'bg-green-50 text-green-700';
   }
 
   if (status === 'draft' || status === 'pending' || status === 'scheduled') {
-    return 'bg-amber-50 text-amber-700 border-amber-200';
+    return 'bg-amber-50 text-amber-700';
   }
 
   if (status === 'rejected' || status === 'archived') {
-    return 'bg-red-50 text-red-700 border-red-200';
+    return 'bg-red-50 text-red-700';
   }
 
-  return 'bg-blue-50 text-blue-700 border-blue-200';
+  return 'bg-blue-50 text-blue-700';
 }
 
 function toRelativeTime(value) {
@@ -150,7 +150,7 @@ function triggerDownload(blob, fileName) {
 
 function StatusBadge({ status, label }) {
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(status)}`}>
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(status)}`}>
       {label}
     </span>
   );

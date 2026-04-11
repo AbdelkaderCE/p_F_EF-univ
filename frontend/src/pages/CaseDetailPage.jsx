@@ -113,7 +113,7 @@ export default function CaseDetailPage({ caseData, onBack }) {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-xl font-bold text-ink tracking-tight">Case {safeCaseData.id}</h1>
-              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${status.bg} ${status.text} border ${status.border}`}>
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${status.bg} ${status.text}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                 {status.label}
               </span>

@@ -1,6 +1,29 @@
 import prisma from "../../config/database";
-import { Prisma } from "@prisma/client";
+import { Prisma, TypeFichierAnnonce } from "@prisma/client";
 import logger from "../../utils/logger";
+
+const resolveFileType = (mimeType?: string): TypeFichierAnnonce => {
+  if (!mimeType) {
+    return "autre";
+  }
+
+  const normalized = mimeType.toLowerCase();
+  if (normalized.includes("pdf")) {
+    return "pdf";
+  }
+  if (normalized.startsWith("image/")) {
+    return "image";
+  }
+  if (
+    normalized.includes("word") ||
+    normalized.includes("officedocument") ||
+    normalized.includes("msword")
+  ) {
+    return "doc";
+  }
+
+  return "autre";
+};
 
 export interface CreateAnnounceInput {
   titre: string;
@@ -8,6 +31,8 @@ export interface CreateAnnounceInput {
   typeAnnonce?: string;
   typeId?: number;
   dateExpiration?: Date;
+  filePath?: string;
+  fileType?: string;
 }
 
 export interface UpdateAnnounceInput {
@@ -31,7 +56,12 @@ const resolveTypeId = async (
 
   const typeName = input.typeAnnonce.trim();
   const existing = await prisma.annonceType.findFirst({
-    where: { nom: { equals: typeName, mode: "insensitive" } },
+    where: {
+      OR: [
+        { nom_ar: { equals: typeName, mode: "insensitive" } },
+        { nom_en: { equals: typeName, mode: "insensitive" } },
+      ],
+    },
     select: { id: true },
   });
 
@@ -40,7 +70,10 @@ const resolveTypeId = async (
   }
 
   const created = await prisma.annonceType.create({
-    data: { nom: typeName },
+    data: {
+      nom_ar: typeName,
+      nom_en: typeName,
+    },
     select: { id: true },
   });
 
@@ -56,8 +89,10 @@ export const createAnnounce = async (
 
     const announce = await prisma.annonce.create({
       data: {
-        titre: input.titre,
-        contenu: input.contenu,
+        titre_ar: input.titre,
+        titre_en: input.titre,
+        contenu_ar: input.contenu,
+        contenu_en: input.contenu,
         auteurId: createdById,
         typeId,
         datePublication: new Date(),
@@ -68,11 +103,22 @@ export const createAnnounce = async (
           select: { id: true, nom: true, prenom: true, email: true },
         },
         type: true,
+        documents: true,
       },
     });
 
+    if (input.filePath) {
+      await prisma.annonceDocument.create({
+        data: {
+          annonceId: announce.id,
+          fichier: input.filePath,
+          type: resolveFileType(input.fileType),
+        },
+      });
+    }
+
     logger.info(`Announcement created: ${announce.id}`);
-    return announce;
+    return getAnnounceById(announce.id);
   } catch (error) {
     logger.error("Error creating announcement:", error);
     throw error;
@@ -88,10 +134,10 @@ export const getAnnounces = async (filters?: {
 
     if (filters?.typeAnnonce?.trim()) {
       where.type = {
-        nom: {
-          equals: filters.typeAnnonce.trim(),
-          mode: "insensitive",
-        },
+        OR: [
+          { nom_ar: { equals: filters.typeAnnonce.trim(), mode: "insensitive" } },
+          { nom_en: { equals: filters.typeAnnonce.trim(), mode: "insensitive" } },
+        ],
       };
     }
 
@@ -102,6 +148,7 @@ export const getAnnounces = async (filters?: {
           select: { id: true, nom: true, prenom: true, email: true },
         },
         type: true,
+        documents: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -134,6 +181,7 @@ export const getAnnounceById = async (id: number) => {
           select: { id: true, nom: true, prenom: true, email: true },
         },
         type: true,
+        documents: true,
       },
     });
 
@@ -155,8 +203,10 @@ export const updateAnnounce = async (id: number, input: UpdateAnnounceInput) => 
     const announce = await prisma.annonce.update({
       where: { id },
       data: {
-        titre: input.titre,
-        contenu: input.contenu,
+        titre_ar: input.titre,
+        titre_en: input.titre,
+        contenu_ar: input.contenu,
+        contenu_en: input.contenu,
         typeId: typeId ?? undefined,
         dateExpiration: input.dateExpiration,
       },
@@ -165,6 +215,7 @@ export const updateAnnounce = async (id: number, input: UpdateAnnounceInput) => 
           select: { id: true, nom: true, prenom: true, email: true },
         },
         type: true,
+        documents: true,
       },
     });
 
@@ -204,6 +255,7 @@ export const getLatestAnnounces = async (limit = 5) => {
           select: { id: true, nom: true, prenom: true },
         },
         type: true,
+        documents: true,
       },
       orderBy: { createdAt: "desc" },
       take: limit,

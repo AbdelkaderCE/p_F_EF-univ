@@ -16,7 +16,7 @@ const ContactHero = () => {
       </div>
 
       <div className="relative z-10 text-center text-white px-4 max-w-3xl">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-6">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface/10 border border-edge-strong backdrop-blur-sm mb-6">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
           <span className="text-sm tracking-wide">We are here to help</span>
         </div>

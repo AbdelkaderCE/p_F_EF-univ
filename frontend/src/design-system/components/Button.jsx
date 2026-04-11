@@ -19,7 +19,7 @@ const base = `
 
 const sizes = {
   sm: 'h-8 px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
+  md: 'h-10 px-4 text-sm',
   lg: 'h-10 px-5 text-sm',
 };
 
@@ -30,19 +30,19 @@ const variants = {
     focus:ring-brand/30
   `,
   secondary: `
-    bg-surface border border-edge-strong text-ink
+    bg-surface border border-edge text-ink-secondary
     hover:bg-surface-200 active:bg-surface-300
-    focus:ring-brand/20
+    focus:ring-brand/30
   `,
   danger: `
     bg-danger text-white
-    hover:bg-red-700 active:bg-red-800
-    focus:ring-red-500/30
+    hover:opacity-90 active:opacity-80
+    focus:ring-danger/30
   `,
   ghost: `
     bg-transparent text-ink-secondary
     hover:bg-surface-200 active:bg-surface-300
-    focus:ring-brand/20
+    focus:ring-brand/30
   `,
 };
 

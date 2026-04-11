@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, resolveMediaUrl } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { Button } from '../design-system/components';
 
 function isAdminRole(roles) {
   if (!Array.isArray(roles)) return false;
@@ -56,8 +57,8 @@ function formatFrDate(value) {
   });
 }
 
-const inputClassName = 'w-full rounded-xl border border-edge bg-canvas px-3.5 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20';
-const sectionClassName = 'rounded-2xl border border-edge bg-surface shadow-card';
+const inputClassName = 'w-full rounded-md border border-control-border bg-control-bg px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30';
+const sectionClassName = 'rounded-lg border border-edge bg-surface shadow-card';
 
 export default function AdminUsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -850,13 +851,14 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-          <button
+          <Button
             type="button"
             onClick={exportOfficialCredentialLists}
-            className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover"
+            variant="primary"
+            size="md"
           >
             Exporter le formulaire Excel officiel
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -868,33 +870,36 @@ export default function AdminUsersPage() {
               <h2 className="text-xl font-semibold tracking-tight text-ink">Create New User</h2>
               <p className="mt-1 text-sm text-ink-secondary">Single-user creation is managed here. Use the dedicated list page for table-based bulk creation.</p>
             </div>
-            <div className="rounded-full border border-brand/20 bg-brand-light px-3 py-1 text-xs font-medium text-brand">
+            <div className="rounded-md border border-brand/20 bg-brand-light px-3 py-1.5 text-xs font-medium text-brand">
               {roles.length} roles available
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => navigate('/dashboard/admin/users/list-create')}
-              className="rounded-full border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+              variant="primary"
+              size="md"
             >
               Open list creation page
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => navigate('/dashboard/admin/academic/management')}
-              className="rounded-full border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              variant="secondary"
+              size="md"
             >
               Open academic structure page
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => navigate('/dashboard/admin/academic/assignments')}
-              className="rounded-full border border-indigo-700 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+              variant="secondary"
+              size="md"
             >
               Open assignments page
-            </button>
+            </Button>
           </div>
 
           <form onSubmit={handleCreateUser} className="mt-6 space-y-6">
@@ -952,10 +957,10 @@ export default function AdminUsersPage() {
                     key={value || 'none'}
                     type="button"
                     onClick={() => setCreateForm((prev) => ({ ...prev, sexe: value }))}
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                    className={`rounded-md border px-4 py-2.5 text-sm font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand/30 ${
                       createForm.sexe === value
                         ? 'border-brand bg-brand-light text-brand shadow-sm'
-                        : 'border-edge bg-canvas text-ink-secondary hover:border-brand/30 hover:text-ink'
+                        : 'border-edge bg-surface text-ink-secondary hover:bg-surface-200 hover:text-ink'
                     }`}
                   >
                     {value || 'Not set'}
@@ -970,7 +975,7 @@ export default function AdminUsersPage() {
                 <span className="text-xs text-ink-tertiary">{createForm.roleNames.length} selected</span>
               </div>
               {!roles.length ? (
-                <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
+                <div className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
                   No roles found. Make sure your backend has roles data and your account has admin access.
                 </div>
               ) : null}
@@ -980,7 +985,7 @@ export default function AdminUsersPage() {
                   return (
                     <label
                       key={role.id}
-                      className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition ${
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition-all duration-150 ${
                         selected
                           ? 'border-brand bg-brand-light/70 text-ink shadow-sm'
                           : 'border-edge bg-canvas text-ink-secondary hover:border-brand/30 hover:text-ink'
@@ -1003,13 +1008,14 @@ export default function AdminUsersPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 border-t border-edge-subtle pt-5">
-              <button
+              <Button
                 type="submit"
-                disabled={creatingUser}
-                className="inline-flex items-center rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover disabled:opacity-60"
+                loading={creatingUser}
+                variant="primary"
+                size="md"
               >
                 {creatingUser ? 'Creating...' : 'Create User'}
-              </button>
+              </Button>
               <p className="text-sm text-ink-tertiary">The temporary password will appear in a secure pop-up after creation.</p>
             </div>
           </form>
@@ -1020,7 +1026,7 @@ export default function AdminUsersPage() {
           <p className="mt-1 text-sm text-ink-secondary">A quick reference so account creation stays consistent.</p>
 
           <div className="mt-5 space-y-4">
-            <div className="rounded-2xl border border-edge bg-canvas px-4 py-4">
+            <div className="rounded-lg border border-edge bg-canvas px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-tertiary">Before Creating</p>
               <ul className="mt-3 space-y-2 text-sm text-ink-secondary">
                 <li>Use the institutional email address.</li>
@@ -1029,28 +1035,30 @@ export default function AdminUsersPage() {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-900">Academic Workflow</p>
-              <p className="mt-2 text-xs text-indigo-800">Use dedicated pages for structure creation and assignments.</p>
+            <div className="rounded-lg border border-brand/20 bg-brand-light px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand">Academic Workflow</p>
+              <p className="mt-2 text-xs text-brand">Use dedicated pages for structure creation and assignments.</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => navigate('/dashboard/admin/academic/management')}
-                  className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                  variant="primary"
+                  size="sm"
                 >
                   Go to Academic Structure
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => navigate('/dashboard/admin/academic/assignments')}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                  variant="secondary"
+                  size="sm"
                 >
                   Go to Assignments
-                </button>
+                </Button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-warning/25 bg-warning/10 px-4 py-4">
+            <div className="rounded-lg border border-warning/25 bg-warning/10 px-4 py-4">
               <p className="text-sm font-semibold text-ink">Password Handling</p>
               <p className="mt-2 text-sm leading-6 text-ink-secondary">
                 The temporary password is displayed once. Copy it from the modal window and deliver it securely to the user.
@@ -1099,7 +1107,7 @@ export default function AdminUsersPage() {
                   <p className="text-xs text-ink-tertiary">Assigned Roles</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {(lastCreatedCredentials.roles || []).map((roleName) => (
-                      <span key={roleName} className="rounded-full border border-brand/25 bg-brand-light px-2 py-1 text-xs font-medium text-brand">
+                      <span key={roleName} className="rounded-full bg-brand-light px-2 py-1 text-xs font-medium text-brand">
                         {roleLabel(roleName)}
                       </span>
                     ))}
@@ -1150,7 +1158,7 @@ export default function AdminUsersPage() {
             <h2 className="text-xl font-semibold tracking-tight text-ink">Existing Users</h2>
             <p className="mt-1 text-sm text-ink-secondary">Review account status and adjust role assignments without leaving the page.</p>
           </div>
-          <div className="rounded-full border border-edge bg-canvas px-3 py-1 text-xs font-medium text-ink-secondary">
+          <div className="rounded-full bg-canvas px-3 py-1 text-xs font-medium text-ink-secondary">
             {users.length} managed accounts
           </div>
         </div>
@@ -1179,12 +1187,12 @@ export default function AdminUsersPage() {
                       <p className="truncate text-base font-semibold text-ink">{u.prenom} {u.nom}</p>
                       <p className="truncate text-sm text-ink-secondary">{u.email}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium border ${
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                           u.status === 'active'
-                            ? 'border-success/25 bg-success/10 text-success'
+                            ? 'bg-success/10 text-success'
                             : u.status === 'suspended'
-                              ? 'border-danger/25 bg-danger/10 text-danger'
-                              : 'border-edge bg-surface text-ink-secondary'
+                              ? 'bg-danger/10 text-danger'
+                              : 'bg-surface text-ink-secondary'
                         }`}>
                           {u.status || 'unknown'}
                         </span>
@@ -1196,7 +1204,7 @@ export default function AdminUsersPage() {
                   </div>
                   <div className="flex flex-wrap justify-end gap-2">
                     {(u.roles || []).map((r) => (
-                      <span key={`${u.id}-${r}`} className="rounded-full border border-brand/25 bg-brand-light px-2.5 py-1 text-xs font-medium text-brand">
+                      <span key={`${u.id}-${r}`} className="rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand">
                         {roleLabel(r)}
                       </span>
                     ))}

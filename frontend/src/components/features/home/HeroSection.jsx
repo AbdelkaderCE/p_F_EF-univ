@@ -74,9 +74,9 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-10 container-custom text-center text-white py-20">
-        <div className="inline-flex items-center bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-8 border border-white/30">
+        <div className="inline-flex items-center rounded-full border border-edge-strong bg-surface/20 px-4 py-2 mb-8 backdrop-blur-sm">
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2" />
-          <span className="text-sm font-medium">✨ University Platform 2026</span>
+          <span className="text-sm font-medium">University Platform 2026</span>
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
@@ -100,7 +100,7 @@ const HeroSection = () => {
           </Link>
           <Link
             to="/about"
-            className="inline-flex items-center gap-2 border-2 border-white text-white px-8 py-3 rounded-md font-medium hover:bg-white hover:text-ink transition-all duration-150"
+            className="inline-flex items-center gap-2 rounded-md border border-edge-strong bg-surface/10 px-8 py-3 font-medium text-surface transition-all duration-150 hover:bg-surface hover:text-ink focus:outline-none focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 focus:ring-offset-canvas"
           >
             Learn More
           </Link>

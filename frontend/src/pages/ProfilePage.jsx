@@ -173,7 +173,7 @@ export default function ProfilePage() {
               {pageUser?.prenom} {pageUser?.nom}
             </h2>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-blue-50 dark:bg-blue-950/40 text-brand border border-blue-200 dark:border-blue-800/50 capitalize">
+              <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-blue-50 dark:bg-blue-950/40 text-brand capitalize">
                 {pageRolePretty}
               </span>
               <span className="text-sm text-ink-secondary">{pageDepartment}</span>
@@ -182,7 +182,7 @@ export default function ProfilePage() {
 
           {/* Status badge */}
           <div className="mt-4 flex items-center gap-2">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-green-50 dark:bg-green-950/40 text-success border border-green-200 dark:border-green-800/50">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-green-50 dark:bg-green-950/40 text-success">
               <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
               Active
             </span>

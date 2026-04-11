@@ -60,13 +60,13 @@ export default function BannerSection() {
             <div className="flex flex-wrap gap-4">
               <Link
                 to="/login"
-                className="bg-white text-ink px-6 py-2.5 rounded-md font-medium hover:shadow-card transition-all duration-150 focus:ring-2 focus:ring-brand/30 focus:ring-offset-2"
+                className="rounded-md border border-edge bg-surface px-6 py-2.5 font-medium text-ink transition-all duration-150 hover:shadow-card hover:bg-surface-200 focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 focus:ring-offset-canvas"
               >
                 {t('common.applyNow')}
               </Link>
               <a
                 href="#features"
-                className="border-2 border-white text-white px-6 py-2.5 rounded-md font-medium hover:bg-white hover:text-ink transition-all duration-150 focus:ring-2 focus:ring-white/30 focus:ring-offset-2"
+                className="rounded-md border border-edge-strong bg-surface/10 px-6 py-2.5 font-medium text-surface transition-all duration-150 hover:bg-surface hover:text-ink focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 focus:ring-offset-canvas"
               >
                 {t('common.learnMore')}
               </a>
@@ -78,7 +78,7 @@ export default function BannerSection() {
             {statCards.map(({ Icon, value, labelKey: label }, i) => (
               <div
                 key={i}
-                className="bg-black/10 backdrop-blur-[2px] rounded-lg p-6 text-center border border-white/20 hover:bg-black/20 transition-all duration-200"
+                className="rounded-lg border border-edge-strong bg-black/10 p-6 text-center backdrop-blur-[2px] transition-all duration-200 hover:bg-black/20"
               >
                 <Icon className="w-12 h-12 mx-auto mb-3 text-yellow-300" />
                 <div className="text-3xl font-bold text-white">{value}</div>

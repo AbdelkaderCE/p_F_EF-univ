@@ -49,13 +49,13 @@ const BannerSection = () => {
             <div className="flex flex-wrap gap-4">
               <Link
                 to="/register"
-                className="bg-white text-ink px-8 py-3 rounded-md font-medium hover:shadow-card transform hover:scale-105 transition-all duration-150"
+                className="rounded-md border border-edge bg-surface px-8 py-3 font-medium text-ink transition-all duration-150 hover:shadow-card hover:bg-surface-200 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 focus:ring-offset-canvas"
               >
                 Apply Now
               </Link>
               <Link
                 to="/about"
-                className="border-2 border-white text-white px-8 py-3 rounded-md font-medium hover:bg-white hover:text-ink transition-all duration-150"
+                className="rounded-md border border-edge-strong bg-surface/10 px-8 py-3 font-medium text-surface transition-all duration-150 hover:bg-surface hover:text-ink focus:outline-none focus:ring-2 focus:ring-brand/30 focus:ring-offset-2 focus:ring-offset-canvas"
               >
                 Learn More
               </Link>

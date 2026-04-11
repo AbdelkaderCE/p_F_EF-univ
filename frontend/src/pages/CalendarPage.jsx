@@ -5,18 +5,18 @@ import request from '../services/api';
 
 const EVENT_COLORS = {
   academic:       'bg-brand',
-  administrative: 'bg-amber-500',
-  events:         'bg-green-500',
-  research:       'bg-violet-500',
-  'student-life': 'bg-rose-500',
+  administrative: 'bg-warning',
+  events:         'bg-success',
+  research:       'bg-brand-dark',
+  'student-life': 'bg-brand-hover',
 };
 
 const EVENT_BADGE_STYLES = {
-  academic:       'bg-blue-50 dark:bg-blue-950/40 text-brand border border-blue-200 dark:border-blue-800/50',
-  administrative: 'bg-amber-50 dark:bg-amber-950/40 text-warning border border-amber-200 dark:border-amber-800/50',
-  events:         'bg-green-50 dark:bg-green-950/40 text-success border border-green-200 dark:border-green-800/50',
-  research:       'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800/50',
-  'student-life': 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50',
+  academic:       'bg-brand-light text-brand border border-brand/30',
+  administrative: 'bg-warning/10 text-warning border border-warning/30',
+  events:         'bg-success/10 text-success border border-success/30',
+  research:       'bg-surface-200 text-ink border border-edge',
+  'student-life': 'bg-surface-300 text-ink-secondary border border-edge',
 };
 
 const CATEGORY_LABEL_KEYS = {
@@ -383,7 +383,7 @@ export default function CalendarPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => navigate('/dashboard/actualites')}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-150"
+                className="inline-flex items-center gap-2 rounded-md border border-brand/30 bg-brand-light px-4 py-2.5 text-sm font-medium text-brand transition-all duration-150 hover:bg-brand-light/80 focus:outline-none focus:ring-2 focus:ring-brand/30"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59" />
@@ -393,7 +393,7 @@ export default function CalendarPage() {
 
               <button
                 onClick={goToday}
-                className="px-4 py-2 text-sm font-medium text-brand bg-brand-light/40 border border-edge rounded-lg hover:bg-brand-light/60 transition-colors duration-150"
+                className="rounded-md border border-edge bg-surface px-4 py-2.5 text-sm font-medium text-ink-secondary transition-all duration-150 hover:bg-surface-200 hover:text-ink focus:outline-none focus:ring-2 focus:ring-brand/30"
               >
                 {t('common.today')}
               </button>
@@ -401,7 +401,7 @@ export default function CalendarPage() {
               {nextEvent && (
                 <button
                   onClick={() => jumpToEvent(nextEvent)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-brand rounded-lg hover:bg-brand-hover transition-colors duration-150"
+                  className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-brand-hover active:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand/30"
                 >
                   {t('calendar.jumpToNext', { defaultValue: 'Jump to Next Event' })}
                 </button>
@@ -480,7 +480,7 @@ export default function CalendarPage() {
 
           <button
             onClick={() => setOnlyUpcoming((prev) => !prev)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors duration-150 ${onlyUpcoming ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40' : 'bg-surface text-ink-secondary border-edge hover:bg-surface-200'}`}
+            className={`px-4 py-2.5 rounded-md text-sm font-medium border transition-colors duration-150 ${onlyUpcoming ? 'bg-success/10 text-success border-success/30' : 'bg-surface text-ink-secondary border-edge hover:bg-surface-200'}`}
           >
             {onlyUpcoming
               ? t('calendar.onlyUpcoming', { defaultValue: 'Only Upcoming' })
@@ -574,7 +574,7 @@ export default function CalendarPage() {
                           setCurrentYear(cell.date.getFullYear());
                         }
                       }}
-                      className={`relative h-[98px] p-2 border-b border-r border-edge-subtle text-left transition-colors duration-100 ${!cell.inMonth ? 'text-ink-muted/40' : 'text-ink-secondary'} ${isSelected ? 'bg-blue-50/60 dark:bg-blue-950/20' : 'hover:bg-surface-200/50'}`}
+                      className={`relative h-[98px] p-2 border-b border-r border-edge-subtle text-left transition-colors duration-100 ${!cell.inMonth ? 'text-ink-muted/40' : 'text-ink-secondary'} ${isSelected ? 'bg-brand-light' : 'hover:bg-surface-200/50'}`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium ${isToday ? 'bg-brand text-white' : ''} ${isSelected && !isToday ? 'ring-2 ring-brand/40' : ''}`}>
@@ -689,7 +689,7 @@ export default function CalendarPage() {
                   <li key={event.id}>
                     <button
                       onClick={() => setSelectedEventId(event.id)}
-                      className={`w-full text-left px-5 py-4 transition-colors duration-100 ${String(selectedEvent?.id) === String(event.id) ? 'bg-blue-50/60 dark:bg-blue-950/20' : 'hover:bg-surface-200/50'}`}
+                      className={`w-full text-left px-5 py-4 transition-colors duration-100 ${String(selectedEvent?.id) === String(event.id) ? 'bg-brand-light' : 'hover:bg-surface-200/50'}`}
                     >
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`px-2 py-0.5 text-[11px] font-medium rounded ${EVENT_BADGE_STYLES[event.category] || ''}`}>

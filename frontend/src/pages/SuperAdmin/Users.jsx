@@ -14,27 +14,27 @@ const Users = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-canvas p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3 mb-2">
-            <Users className="w-10 h-10 text-blue-600" />
+          <h1 className="text-4xl font-bold text-ink flex items-center gap-3 mb-2">
+            <Users className="w-10 h-10 text-brand" />
             User Management
           </h1>
-          <p className="text-gray-600">
+          <p className="text-ink-secondary">
             Register new users, manage roles, and maintain strict role separation between teachers and students.
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-gray-200">
+        <div className="flex gap-2 mb-8 border-b border-edge">
           <button
             onClick={() => setActiveTab('register')}
             className={`px-6 py-3 font-semibold flex items-center gap-2 border-b-2 transition ${
               activeTab === 'register'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-ink-secondary hover:text-ink'
             }`}
           >
             <Plus className="w-5 h-5" />
@@ -44,8 +44,8 @@ const Users = () => {
             onClick={() => setActiveTab('manage')}
             className={`px-6 py-3 font-semibold flex items-center gap-2 border-b-2 transition ${
               activeTab === 'manage'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-ink-secondary hover:text-ink'
             }`}
           >
             <Settings className="w-5 h-5" />
@@ -65,13 +65,13 @@ const Users = () => {
         </div>
 
         {/* Info Box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-7xl mx-auto">
-          <h3 className="font-bold text-blue-900 mb-3">💡 Role Management Best Practices</h3>
-          <ul className="space-y-2 text-blue-800 text-sm">
-            <li>📌 Teacher roles (Enseignant, Admin, Vice Doyen) cannot be mixed with student roles</li>
-            <li>👥 Each user is either a teacher or a student, maintaining clear institutional hierarchy</li>
-            <li>🔐 Role assignment is strictly validated during user creation and updates</li>
-            <li>✓ New users are assigned a temporary password and must change it on first login</li>
+        <div className="bg-brand-light border border-brand/30 rounded-lg p-6 max-w-7xl mx-auto">
+          <h3 className="font-bold text-brand mb-3">Role Management Best Practices</h3>
+          <ul className="space-y-2 text-brand text-sm">
+            <li>Teacher roles (Enseignant, Admin, Vice Doyen) cannot be mixed with student roles.</li>
+            <li>Each user is either a teacher or a student, maintaining clear institutional hierarchy.</li>
+            <li>Role assignment is strictly validated during user creation and updates.</li>
+            <li>New users are assigned a temporary password and must change it on first login.</li>
           </ul>
         </div>
       </div>

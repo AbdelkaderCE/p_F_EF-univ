@@ -10,7 +10,7 @@ import React from 'react';
 export function Card({ children, className = '', ...props }) {
   return (
     <div
-      className={`bg-surface rounded-md shadow-card border border-edge ${className}`}
+      className={`bg-surface rounded-lg shadow-card border border-edge ${className}`}
       {...props}
     >
       {children}
