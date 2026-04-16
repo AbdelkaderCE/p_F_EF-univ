@@ -57,6 +57,7 @@ module.exports = {
       boxShadow: {
         soft: 'var(--shadow-soft)',
         card: 'var(--shadow-card)',
+        'card-hover': 'var(--shadow-card-hover)',
       },
       spacing: {
         '18': '4.5rem',
