@@ -1235,7 +1235,7 @@ function CasesTab({
                 return (
                   <tr
                     key={c.id}
-                    className={`hover:bg-surface-200/50 dark:hover:bg-surface-300/20 transition-colors duration-100 cursor-pointer ${overdue ? 'bg-amber-50/40 dark:bg-amber-950/20' : ''}`}
+                    className={`hover:bg-surface-200/50 dark:hover:bg-surface-300/20 transition-colors duration-100 cursor-pointer ${overdue ? 'bg-warning/5' : ''}`}
                     onClick={() => onSelectCase(c)}
                   >
                     <td className="px-6 py-3.5">
@@ -1273,7 +1273,7 @@ function CasesTab({
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); onSelectCase(c); }}
-                          className="px-3 py-1 text-xs font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-edge-strong border-edge-strong rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-100 focus:ring-2 focus:ring-brand/30"
+                          className="px-3 py-1 text-xs font-medium text-brand bg-brand/5 border border-edge-strong rounded-md hover:bg-brand/10 transition-colors duration-100 focus:ring-2 focus:ring-brand/30"
                         >
                           View
                         </button>
@@ -1413,7 +1413,7 @@ function MeetingsTab({ meetings, cases, filterStatus, setFilterStatus, search, s
                     <td className="px-6 py-3.5 text-right">
                       <button
                         onClick={e => { e.stopPropagation(); onViewMeeting(m); }}
-                        className="px-3 py-1 text-xs font-medium text-brand bg-blue-50 dark:bg-blue-950/40 border border-edge-strong border-edge-strong rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-100 focus:ring-2 focus:ring-brand/30"
+                        className="px-3 py-1 text-xs font-medium text-brand bg-brand/5 border border-edge-strong rounded-md hover:bg-brand/10 transition-colors duration-100 focus:ring-2 focus:ring-brand/30"
                       >
                         View
                       </button>
@@ -1511,7 +1511,7 @@ function NewMeetingTab({ cases, preselected = [], onSave, onCancel }) {
           <h3 className="text-base font-semibold text-ink mb-4">Related Cases</h3>
           <div className="flex flex-wrap gap-2 mb-4">
             {selectedCases.map(c => (
-              <div key={c.id} className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-edge-strong border-edge-strong rounded-md text-xs font-medium text-brand">
+              <div key={c.id} className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand/5 border border-edge-strong rounded-md text-xs font-medium text-brand">
                 <Avatar name={c.studentName} size="w-5 h-5 text-[8px]" />
                 {c.studentName}
                 <button
@@ -1613,7 +1613,7 @@ function NewMeetingTab({ cases, preselected = [], onSave, onCancel }) {
           {/* Chair */}
           <div className="mb-4">
             <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Chair</label>
-            <div className="flex items-center gap-3 px-3 py-2.5 bg-green-50 dark:bg-green-950/40 border border-edge-strong border-edge-strong rounded-md">
+            <div className="flex items-center gap-3 px-3 py-2.5 bg-success/5 border border-edge-strong rounded-md">
               <Avatar name={form.president} size="w-6 h-6 text-[9px]" />
               <span className="text-sm font-medium text-success">{form.president}</span>
             </div>
@@ -1645,7 +1645,7 @@ function NewMeetingTab({ cases, preselected = [], onSave, onCancel }) {
         {/* Action buttons */}
         <div className="flex flex-col gap-2">
           {saveError && (
-            <p className="text-xs text-danger bg-red-50 dark:bg-red-950/40 border border-edge-strong border-edge-strong rounded-md px-3 py-2">
+            <p className="text-xs text-danger bg-danger/5 border border-edge-strong rounded-md px-3 py-2">
               {saveError}
             </p>
           )}
